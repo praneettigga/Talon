@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Talon · Fraud detection</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0f1c;--pn:#101728;--ln:#1f2a44;--tx:#dbe3f5;--mu:#7c8aa8;--ac:#3b9dff;--hi:#ff5d6c;--md:#ffb547;--lo:#4fd1a1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:14px/1.45 Manrope,system-ui,sans-serif;display:flex;flex-direction:column}
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--ln)}
+.brand{font-weight:600;font-size:17px;display:flex;align-items:center;gap:9px;margin-right:8px}
+.brand i{width:12px;height:12px;border-radius:50%;background:var(--ac);box-shadow:0 0 14px var(--ac)}
+input,select,button{font:inherit;color:var(--tx)}
+#q,#ac{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:7px 11px;outline:none}
+#q{width:260px;max-width:100%}#q:focus,#ac:focus{border-color:var(--ac)}
+label{color:var(--mu);display:flex;align-items:center;gap:8px}
+label b{color:var(--tx);font-weight:500;min-width:22px}
+input[type=range]{accent-color:var(--ac);width:120px}
+.seg{margin-left:auto;display:flex;background:var(--pn);border-radius:999px;padding:3px}
+.seg button{background:none;border:0;border-radius:999px;padding:5px 15px;cursor:pointer;color:var(--mu)}
+.seg button.on{background:#1b2742;color:var(--tx)}
+#ov{position:absolute;inset:0;z-index:5;display:none;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(10,15,28,.62);align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer}
+#ov.on{display:flex;animation:fi .3s}@keyframes fi{from{opacity:0}}
+#fn{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:#3b9dff;box-shadow:0 0 44px #3b9dffaa;transition:left .6s ease,top .6s ease}
+#fn b{position:absolute;top:70px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:16px;font-weight:600}
+#ft{max-width:540px;font-size:clamp(22px,3.2vw,34px);line-height:1.35;font-weight:500;margin:80px 0 0}
+#ov small{position:absolute;bottom:18px;color:var(--mu)}
+#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;display:none;flex-direction:column;align-items:center;gap:14px;width:300px;padding:22px;background:rgba(16,23,40,.92);border:1px solid var(--ln);border-radius:14px;pointer-events:none}
+#ld.on{display:flex}.sp{width:38px;height:38px;border:3px solid var(--ln);border-top-color:var(--ac);border-radius:50%;animation:rot .8s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}
+.pb{width:100%;height:3px;background:var(--ln);border-radius:3px;overflow:hidden}.pb i{display:block;height:100%;width:0;background:var(--ac)}#ld.on .pb i{animation:pg 2.7s linear forwards}@keyframes pg{to{width:100%}}
+#fs{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center}
+#fs.on{display:flex}.rg{position:relative;width:180px;height:180px}.rg svg{width:100%;height:100%}
+#fp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:600}
+.orb{position:absolute;inset:0;animation:rot 3s linear infinite}.orb i{position:absolute;top:-4px;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--ac);box-shadow:0 0 12px var(--ac)}
+#fl{font-size:18px;min-height:26px}#fs small{color:var(--mu)}
+.hid{display:none!important}
+button:disabled{opacity:.5;cursor:default}.imp{background:var(--ac);color:#04101f;border:0;border-radius:8px;padding:7px 16px;font-weight:600;cursor:pointer}
+button:focus-visible{outline:2px solid var(--ac)}
+main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 320px}
+.gw{position:relative;min-height:380px}
+canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
+nav{position:absolute;left:20px;top:14px;display:flex;flex-wrap:wrap;gap:6px;color:var(--mu);z-index:2}
+nav span{cursor:pointer}nav span:hover{color:var(--tx)}nav span:last-child{color:var(--tx);cursor:default}
+.lg{position:absolute;left:20px;bottom:14px;display:flex;gap:16px;color:var(--mu);font-size:12px}
+.lg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+aside{border-left:1px solid var(--ln);background:var(--pn);padding:18px;overflow:auto;display:flex;flex-direction:column;gap:22px}
+h3{margin:0 0 8px;font-size:12px;font-weight:500;color:var(--mu)}
+.big{font-size:38px;font-weight:600;line-height:1}
+.sub{color:var(--mu);margin-bottom:10px}
+ul{margin:0;padding:0;list-style:none}
+.rs li{padding:6px 0 6px 12px;border-left:2px solid var(--ln);margin-bottom:6px}
+.rk li{display:grid;grid-template-columns:1fr 34px 58px;gap:6px;padding:7px 0;border-bottom:1px solid var(--ln);cursor:pointer}
+.rk li:hover{color:var(--ac)}.rk span:nth-child(3){text-align:right}
+svg{width:100%;display:block}
+@media(max-width:820px){main{grid-template-columns:1fr;overflow:auto}.gw{height:62vh}aside{border-left:0;border-top:1px solid var(--ln)}.seg{margin-left:0}}
+</style></head><body>
+<header>
+<div class="brand"><i></i>Talon</div>
+<input id="q" class="hid" placeholder="Search account, merchant or device" aria-label="Search">
+<label class="hid">Risk above <input id="mn" type="range" min="0" max="90" value="0"><b id="mv">0</b></label>
+<select id="ac" class="hid" aria-label="Type"><option>All</option><option>Account</option><option>Merchant</option><option>Device</option></select>
+<div class="seg"><button id="bn" class="on">Network</button><button id="bh">Heatmap</button></div>
+<button id="im" class="imp">Import dataset</button><input id="fi" type="file" accept=".csv,.json,.xlsx" hidden>
+</header>
+<main>
+<section class="gw"><nav id="bc"></nav><canvas id="g"></canvas>
+<div class="lg"><span><i style="background:var(--lo)"></i>Low</span><span><i style="background:var(--md)"></i>Medium</span><span><i style="background:var(--hi)"></i>High</span><span>Click a fraud type to learn about it, or an account to look inside</span></div>
+<div id="ld"><div class="sp"></div><div id="lt"></div><div class="pb"><i></i></div></div>
+<div id="ov"><div id="fn"><b></b></div><p id="ft"></p><small>Click anywhere to close</small></div></section>
+<aside>
+<div><h3>Selected</h3><div id="dt"></div></div>
+<div><h3>Risk score, last 30 days</h3><div id="ch"></div></div>
+<div><h3>Highest risk in this view</h3><ul class="rk" id="rk"></ul></div>
+</aside>
+</main>
+<div id="fs"><div class="rg"><div class="orb"><i></i></div><svg viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" fill="none" stroke="#1f2a44" stroke-width="4"/><circle id="fb" cx="80" cy="80" r="70" fill="none" stroke="#3b9dff" stroke-width="4" stroke-linecap="round" stroke-dasharray="440" stroke-dashoffset="440" transform="rotate(-90 80 80)"/></svg><b id="fp">0%</b></div><div id="fl"></div><small>This takes about 10 seconds</small></div>
+<script>
+const $=s=>document.querySelector(s);
+let seed=11;const rnd=()=>(seed=seed*16807%2147483647,(seed-1)/2147483646);
+const hs=s=>{let h=2166136261;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0};
+const ws=(k,f)=>{const o=seed;seed=hs(k)%2147483646+1;const r=f();seed=o;return r};
+const T=['Account','Merchant','Device'],M=['Northwind Retail','Kite Travel','Helix Pay','Orbit Gaming','Lumen Foods','Atlas Crypto','Vela Market','Pine Wire'];
+const RS=['Spending 4x above the usual pattern','Signed in from 3 new devices within an hour','Shares a device with 5 flagged accounts','Funds moved out minutes after arriving','Activity at hours far from the usual','First purchase in this merchant category','Round transfers just under the limit','Location does not match billing country'];
+const col=r=>r>=70?'#ff5d6c':r>=40?'#ffb547':'#4fd1a1';
+const cn=n=>n.fraud?'#3b9dff':n.nl?'#6b7a99':col(n.risk);
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function mk(id,depth,pr){return ws(id,()=>{const t=T[Math.floor(rnd()*3)],risk=Math.max(3,Math.min(98,Math.round(pr==null?Math.pow(rnd(),1.5)*100:pr+(rnd()-.45)*60)));
+const label=t=='Merchant'?M[Math.floor(rnd()*8)]:t=='Account'?'Acct '+(1000+Math.floor(rnd()*9000)):'Device '+Math.floor(rnd()*65535).toString(16);
+return{id,depth,type:t,label,risk,r:7+risk/100*9+rnd()*3,ch:Math.round((rnd()*6-3)*10)/10,x:0,y:0,vx:0,vy:0}})}
+let nodes=[],links=[],path=[],sel=null,hov=null,t0=0,heat=false,rootN=[],rootL=[],detected=false,busy=false;
+const FR=[['Account takeover',"A criminal logs in to a real customer's account with stolen details, then moves the money out."],['Card fraud','Stolen card details are used for purchases the real cardholder never made.'],['Money laundering','Illegal funds are split into many small transfers to hide where they came from.'],['Synthetic identity','A fake person is built from real and invented details to open accounts and borrow.'],['Phishing scams','Customers are tricked into sending money or sharing codes through fake messages.']];
+function initRoot(){rootN=FR.map((f,i)=>{const a=i/5*6.283-1.57;return{id:'f'+i,fraud:1,depth:0,type:'Fraud',label:f[0],desc:f[1],risk:0,r:26,ch:0,x:0,y:0,vx:0,vy:0,fx:Math.cos(a)*210,fy:Math.sin(a)*210}});rootN.forEach(n=>{n.x=n.fx;n.y=n.fy})}
+function showF(n){const{s}=sc(),[x,y]=P(n,s),f=$('#fn');f.style.transition='none';f.style.left=x+'px';f.style.top=y+'px';$('#fn b').textContent=n.label;$('#ft').textContent=n.desc;$('#ov').classList.add('on');
+requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.transition='';f.style.left='50%';f.style.top='24%'}))}
+function load(done){const f=$('#fs'),m=['Reading dataset…','Cleaning and validating records…','Building account behavior profiles…','Scoring behavior patterns…','Comparing against known fraud signatures…','Matching accounts to fraud types…'],T=10000,t0=performance.now();f.classList.add('on');
+const tick=()=>{const p=Math.min(1,(performance.now()-t0)/T);$('#fp').textContent=Math.round(p*100)+'%';$('#fb').style.strokeDashoffset=440*(1-p);$('#fl').textContent=m[Math.min(m.length-1,Math.floor(p*m.length))];
+if(p<1)requestAnimationFrame(tick);else setTimeout(()=>{f.classList.remove('on');done()},500)};tick()}
+let DATA=null;
+function kn(id,depth,type,label,risk){return{id,depth,type,label,risk,r:7+risk/100*9,ch:0,x:0,y:0,vx:0,vy:0}}
+function parse(t){const L=t.trim().split(/\r?\n/).slice(1).map(l=>l.split(',').map(x=>x.trim())).filter(r=>r.length>=7),G={};L.forEach(r=>(G[r[0]]=G[r[0]]||[]).push(r));
+DATA=Object.entries(G).map(([id,rs])=>{const fi=Math.max(0,FR.findIndex(f=>f[0].toLowerCase()==rs[0][1].toLowerCase())),risk=Math.round(+rs[0][2]),a=kn(id,0,'Account',id,risk),kids=[];a.r=5+risk/100*5;a.fr=fi;a.nl=1;
+for(const[ci,type]of[[3,'Device'],[4,'Merchant']])[...new Set(rs.map(r=>r[ci]))].forEach(v=>{const tx=rs.filter(r=>r[ci]==v).map((r,i)=>kn(id+'.'+type+v+i,2,'Transaction','$'+(+r[5]).toLocaleString(),+r[6])),c=kn(id+'.'+type+v,1,type,v,Math.max(...tx.map(x=>x.risk)));c.kids=tx;kids.push(c)});
+a.kids=kids;return a});if(!DATA.length)DATA=null}
+function detect(){if(busy||detected)return;busy=true;$('#im').disabled=true;$('#im').textContent='Analyzing…';path=[];build(null);sel=null;draw2();
+let N=40;const A=[],b=$('#bc');ws('acc',()=>{for(let i=0;i<N;i++){const a=mk('a'+i,0);a.type='Account';a.label='Acct '+(1000+Math.floor(rnd()*9000));a.risk=Math.max(40,a.risk);a.r=5+a.risk/100*5;a.fr=Math.floor(rnd()*5);a.nl=1;A.push(a)}});
+if(DATA){A.length=0;A.push(...DATA);N=A.length}
+load(()=>{b.textContent='Linking accounts to fraud types…';A.forEach(a=>{const t=Math.random()*6.28;a.x=Math.cos(t)*380;a.y=Math.sin(t)*380;rootN.push(a)});let k=0;const t2=setInterval(()=>{const a=A[k++];a.nl=0;rootL.push([a,rootN[a.fr]]);if(k>=N){clearInterval(t2);detected=true;busy=false;$('#im').textContent='Dataset loaded';crumbs();draw2();document.querySelectorAll('.hid').forEach(e=>e.classList.remove('hid'))}},70)})}
+
+function build(f){nodes=[];links=[];
+if(!f){rootN.forEach(n=>n.pin=0);nodes=rootN;links=rootL}
+else{const n=f.kids?f.kids.length:ws(f.id+'k',()=>4+Math.floor(rnd()*3));f.pin=1;nodes.push(f);
+for(let i=0;i<n;i++){const c=f.kids?f.kids[i]:mk(f.id+'.'+i,f.depth+1,f.risk);nodes.push(c);links.push([f,c])}
+ws(f.id+'l',()=>{for(let i=1;i<n;i++)if(rnd()<.35)links.push([nodes[i],nodes[i+1]])})}
+if(f)nodes.forEach((n,i)=>{const a=Math.random()*6.28,d=f?40:160;n.x=f&&!i?0:Math.cos(a)*d;n.y=f&&!i?0:Math.sin(a)*d;n.vx=n.vy=0});
+t0=performance.now();sel=f||sel;draw2()}
+function step(){const f=path.length>0,L=f?120:75;
+for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j];let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy+.1,d=Math.sqrt(d2),k=(f?3200:1600)/d2;dx=dx/d*k;dy=dy/d*k;a.vx+=dx;a.vy+=dy;b.vx-=dx;b.vy-=dy}
+for(const[a,b]of links){let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)+.1,k=(d-L)*.02/d;a.vx+=dx*k;a.vy+=dy*k;b.vx-=dx*k;b.vy-=dy*k}
+for(const n of nodes){if(n.fraud){n.x=n.fx;n.y=n.fy;continue}if(n.pin){n.x=n.y=0;continue}n.vx-=n.x*.004;n.vy-=n.y*.004;n.vx*=.86;n.vy*=.86;n.x+=n.vx;n.y+=n.vy}}
+const cv=$('#g'),cx=cv.getContext('2d');let W=0,H=0;const D=devicePixelRatio||1;
+new ResizeObserver(()=>{const r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*D;cv.height=H*D}).observe(cv);
+const vis=n=>{if(n.fraud)return true;const q=$('#q').value.trim().toLowerCase(),a=$('#ac').value;return n.risk>=+$('#mn').value&&(a=='All'||n.type==a)&&(!q||n.label.toLowerCase().includes(q))};
+const sc=()=>{const e=RM?1:Math.min(1,(performance.now()-t0)/650);return{s:Math.min(W,H)/(path.length?440:640)*(.6+.4*(1-Math.pow(1-e,3))),e}};
+const P=(n,s)=>[W/2+n.x*s,H/2+n.y*s];
+function frame(){step();cx.setTransform(D,0,0,D,0,0);cx.clearRect(0,0,W,H);const{s,e}=sc();
+if(heat)for(const n of nodes){const[x,y]=P(n,s),g=cx.createRadialGradient(x,y,0,x,y,70*s*(.5+n.risk/100));g.addColorStop(0,cn(n)+'88');g.addColorStop(1,cn(n)+'00');cx.fillStyle=g;cx.fillRect(x-150,y-150,300,300)}
+cx.lineWidth=1;for(const[a,b]of links){const[x1,y1]=P(a,s),[x2,y2]=P(b,s),on=hov&&(a==hov||b==hov);cx.strokeStyle=on?'#3b9dff':'rgba(140,160,200,'+(.22*e)+')';cx.lineWidth=on?1.6:1;cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke()}
+cx.textAlign='center';cx.font='12px Manrope,sans-serif';
+for(const n of nodes){const[x,y]=P(n,s),v=vis(n),r=n.r*Math.min(1.4,s*1.1+.2);cx.globalAlpha=(v?1:.13)*e;
+const g=cx.createRadialGradient(x,y,r*.5,x,y,r*2.4);g.addColorStop(0,cn(n)+'55');g.addColorStop(1,cn(n)+'00');cx.fillStyle=g;cx.beginPath();cx.arc(x,y,r*2.4,0,7);cx.fill();
+cx.fillStyle=cn(n);cx.beginPath();cx.arc(x,y,r,0,7);cx.fill();
+if(n==path[path.length-1]||n==hov){cx.strokeStyle='#dbe3f5';cx.lineWidth=1.5;cx.beginPath();cx.arc(x,y,r+5,0,7);cx.stroke()}
+if(v&&(n.r>12||n==hov||path.length||$('#q').value)){cx.fillStyle=n==hov?'#fff':'#9fb0d0';cx.fillText(n.label,x,y+r+15)}}
+cx.globalAlpha=1;requestAnimationFrame(frame)}
+function at(ev){const b=cv.getBoundingClientRect(),mx=ev.clientX-b.left,my=ev.clientY-b.top,{s}=sc();let best=null,bd=1e9;
+for(const n of nodes){const[x,y]=P(n,s),d=Math.hypot(x-mx,y-my);if(d<n.r*Math.min(1.4,s*1.1+.2)+8&&d<bd){best=n;bd=d}}return best}
+cv.onmousemove=e=>{hov=at(e)};cv.onmouseleave=()=>hov=null;
+cv.onclick=e=>{const n=at(e);if(!n||n==path[path.length-1])return;go(n)};
+function go(n){if(n.fraud){showF(n);return}sel=n;if(n.depth<2){path.push(n);build(n)}else draw2();crumbs()}
+function crumbs(){const b=$('#bc');b.innerHTML='';const items=[{l:'Fraud overview',i:0},...path.map((n,i)=>({l:n.label,i:i+1}))];
+items.forEach((it,k)=>{const s=document.createElement('span');s.textContent=it.l;if(k<items.length-1)s.onclick=()=>{path=path.slice(0,it.i);const f=path[path.length-1]||null;if(f)f.pin=1;build(f);sel=f;crumbs();draw2()};b.append(s);if(k<items.length-1){const c=document.createElement('span');c.textContent='›';c.style.cursor='default';b.append(c)}})}
+function draw2(){const n=sel;$('#ch').parentNode.style.display=n&&!n.fraud?'':'none';
+if(!n){$('#dt').innerHTML='<div class="sub">Click a fraud type to see what it is. Import a dataset to start detection.</div>';$('#ch').innerHTML='';}
+else if(n.fraud){const c=links.filter(l=>l[1]==n).length;$('#dt').innerHTML=`<div class="big" style="font-size:22px;color:#3b9dff">${n.label}</div><div class="sub" style="margin-top:8px">${n.desc}</div>`+(detected?`<div>${c} accounts linked</div>`:'')}
+else{const rs=ws(n.id+'r',()=>{const a=[...RS],o=[];for(let i=0;i<3;i++)o.push(a.splice(Math.floor(rnd()*a.length),1)[0]);return o});
+$('#dt').innerHTML=`<div class="big" style="color:${cn(n)}">${n.risk}</div><div class="sub">${n.label}, ${n.type.toLowerCase()}</div><ul class="rs">${rs.map(r=>'<li>'+r+'</li>').join('')}</ul>`;
+const pts=ws(n.id+'c',()=>{let v=Math.max(5,n.risk-30),o=[];for(let i=0;i<30;i++){v+= (n.risk-v)*.12+(rnd()-.5)*14;v=Math.max(2,Math.min(99,v));o.push(v)}o[29]=n.risk;return o});
+const xy=pts.map((v,i)=>[i*288/29,86-v*.8]),d='M'+xy.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L');
+$('#ch').innerHTML=`<svg viewBox="0 0 288 90"><defs><linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cn(n)}" stop-opacity=".35"/><stop offset="1" stop-color="${cn(n)}" stop-opacity="0"/></linearGradient></defs><path d="${d}L288,90L0,90Z" fill="url(#a)"/><path d="${d}" fill="none" stroke="${cn(n)}" stroke-width="1.6"/></svg>`}
+$('#rk').innerHTML=nodes.filter(n=>!n.fraud&&!n.nl).sort((a,b)=>b.risk-a.risk).slice(0,8).map((n,i)=>`<li data-i="${nodes.indexOf(n)}"><span>${n.label}</span><span style="color:${cn(n)}">${n.risk}</span><span style="color:${n.ch>0?'var(--hi)':'var(--lo)'}">${n.ch>0?'+':''}${n.ch}%</span></li>`).join('');$('#rk').parentNode.style.display=$('#rk').innerHTML?'':'none'}
+$('#rk').onclick=e=>{const li=e.target.closest('li');if(li){const n=nodes[+li.dataset.i];if(n!=path[path.length-1])go(n)}};
+$('#bn').onclick=()=>{heat=false;$('#bn').classList.add('on');$('#bh').classList.remove('on')};
+$('#bh').onclick=()=>{heat=true;$('#bh').classList.add('on');$('#bn').classList.remove('on')};
+$('#mn').oninput=e=>$('#mv').textContent=e.target.value;
+$('#im').onclick=()=>$('#fi').click();$('#fi').onchange=e=>{if(!e.target.files.length)return;const r=new FileReader();r.onload=()=>{try{parse(r.result)}catch(x){DATA=null}detect()};r.readAsText(e.target.files[0])};
+$('#ov').onclick=()=>$('#ov').classList.remove('on');addEventListener('keydown',e=>{if(e.key=='Escape')$('#ov').classList.remove('on')});
+initRoot();build(null);crumbs();draw2();frame();
+</script></body></html>
