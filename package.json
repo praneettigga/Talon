@@ -1,0 +1,28 @@
+{
+  "name": "talon",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,ui \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build --workspaces",
+    "check": "npm run check --workspaces",
+    "test": "python -m unittest discover -s pipeline/tests -v && npm run test -w backend",
+    "test:ui": "playwright test",
+    "data:replay": "python -m pipeline.replay",
+    "data:download": "python -m pipeline download",
+    "data:profile": "python -m pipeline profile",
+    "data:setup": "python -m pipeline setup"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "shell-quote": "^1.11.0"
+  }
+}

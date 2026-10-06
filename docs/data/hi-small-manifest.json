@@ -1,0 +1,77 @@
+{
+  "account_age_available": false,
+  "dataset": "IBM AMLWorld HI-Small synthetic AML benchmark",
+  "enabled_typologies": [
+    "BIPARTITE",
+    "CYCLE",
+    "FAN-IN",
+    "FAN-OUT",
+    "GATHER-SCATTER",
+    "SCATTER-GATHER",
+    "STACK"
+  ],
+  "event_time_range": {
+    "first": "2022-09-01T00:00:00",
+    "last": "2022-09-18T16:18:00",
+    "timezone": "unspecified by source"
+  },
+  "files": {
+    "HI-Small_Patterns.txt": {
+      "attempts": 370,
+      "bytes": 323844,
+      "sha256": "2c546b5ce6009e73851f0139af053cf845f08bf92f3bc82fe1eb937dec2ef39b",
+      "transaction_rows": 3209,
+      "unique_transaction_rows": 3209
+    },
+    "HI-Small_Trans.csv": {
+      "bytes": 475664283,
+      "columns": [
+        "Timestamp",
+        "From Bank",
+        "Account",
+        "To Bank",
+        "Account",
+        "Amount Received",
+        "Receiving Currency",
+        "Amount Paid",
+        "Payment Currency",
+        "Payment Format",
+        "Is Laundering"
+      ],
+      "rows": 5078345,
+      "sha256": "b19d39f515523373f991b689c07e11e7b0b95c17a2c27a87d91584ae16c5b040"
+    },
+    "HI-Small_accounts.csv": {
+      "bytes": 34053187,
+      "columns": [
+        "Bank Name",
+        "Bank ID",
+        "Account Number",
+        "Entity ID",
+        "Entity Name"
+      ],
+      "rows": 518581,
+      "sha256": "786808526e33cfc441212dd6fccda7edfc24172149bed59c6ef59b186836b014"
+    }
+  },
+  "labels": {
+    "0": 5073168,
+    "1": 5177
+  },
+  "license": "CDLA-Sharing-1.0",
+  "schema_version": 1,
+  "source_url": "https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml",
+  "typology_attempts": {
+    "BIPARTITE": 49,
+    "CYCLE": 54,
+    "FAN-IN": 40,
+    "FAN-OUT": 48,
+    "GATHER-SCATTER": 51,
+    "RANDOM": 41,
+    "SCATTER-GATHER": 44,
+    "STACK": 43
+  },
+  "unsupported_typologies": [
+    "RANDOM"
+  ]
+}
