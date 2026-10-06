@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { artifactSchema, type Artifact, type Control, type Snapshot } from './contracts.js';
+import { unavailable, type IntelligenceWorker } from './worker.js';
+import type { IntelligenceSnapshot } from './contracts.js';
 
 export async function loadArtifact(path: string): Promise<Artifact> {
   return artifactSchema.parse(JSON.parse(await readFile(path, 'utf8')));
@@ -11,8 +13,15 @@ export class Replay {
   private status: Snapshot['status'];
   private timer: ReturnType<typeof setInterval> | undefined;
   private listeners = new Set<(snapshot: Snapshot) => void>();
-  constructor(private artifact: Artifact | null, private error: string | null = null) {
+  private intelligence: IntelligenceSnapshot;
+  private busy = false;
+  private generation = 0;
+  private resetting = false;
+  private pausing = false;
+  constructor(private artifact: Artifact | null, private error: string | null = null,
+    private worker?: IntelligenceWorker, initial?: IntelligenceSnapshot) {
     this.status = artifact ? 'paused' : 'unavailable';
+    this.intelligence = initial ?? unavailable('Intelligence worker not configured');
   }
   snapshot(): Snapshot {
     return {
@@ -21,6 +30,7 @@ export class Replay {
       eventTime: this.artifact?.events[this.cursor - 1]?.timestamp ?? null,
       dataset: this.artifact?.dataset ?? 'IBM AMLWorld HI-Small synthetic AML benchmark',
       error: this.error, events: this.artifact?.events.slice(0, this.cursor) ?? [],
+      intelligence: this.intelligence,
     };
   }
   subscribe(listener: (snapshot: Snapshot) => void) {
@@ -38,11 +48,27 @@ export class Replay {
   }
   private startTimer() {
     this.stopTimer();
-    this.timer = setInterval(() => this.advance(), 1000 / this.speed);
+    this.timer = setInterval(() => { void this.advance(); }, 1000 / this.speed);
   }
-  advance() {
-    if (this.status !== 'running' || !this.artifact) return;
+  async advance() {
+    if (this.status !== 'running' || !this.artifact || this.busy) return;
+    const generation = this.generation;
+    this.busy = true;
+    if (this.worker) {
+      try {
+        const result = await this.worker.event(this.artifact.events[this.cursor]);
+        if (generation !== this.generation || this.status !== 'running') { this.busy = false; return; }
+        this.intelligence = result;
+      } catch (error) {
+        if (generation === this.generation) {
+          this.stopTimer(); this.status = 'paused';
+          this.intelligence = unavailable((error as Error).message); this.publish();
+        }
+        this.busy = false; return;
+      }
+    }
     this.cursor += 1;
+    this.busy = false;
     if (this.cursor === this.artifact.events.length) {
       this.status = 'completed';
       this.stopTimer();
@@ -51,6 +77,8 @@ export class Replay {
   }
   control(command: Control) {
     if (!this.artifact) throw new Error(this.error ?? 'Replay data unavailable');
+    if (this.resetting) throw new Error('Reset in progress. Wait for the worker to finish.');
+    if (this.pausing) throw new Error('Pause in progress. Wait for the current event to finish.');
     switch (command.action) {
       case 'start':
         if (this.status === 'completed') throw new Error('Replay completed. Reset to replay again.');
@@ -58,10 +86,14 @@ export class Replay {
         break;
       case 'pause':
         this.stopTimer();
+        // An in-flight event is committed before pause completes.
+        if (this.busy) { this.pausing = true; return this.waitThenPause(); }
         if (this.status !== 'completed') this.status = 'paused';
         break;
       case 'reset':
+        this.generation += 1;
         this.stopTimer(); this.cursor = 0; this.speed = 1; this.status = 'paused';
+        if (this.worker) { this.resetting = true; return this.resetIntelligence(); }
         break;
       case 'speed':
         this.speed = command.speed;
@@ -71,5 +103,16 @@ export class Replay {
     this.publish();
     return this.snapshot();
   }
-  dispose() { this.stopTimer(); this.listeners.clear(); }
+  private async waitThenPause() {
+    while (this.busy) await new Promise(resolve => setTimeout(resolve, 5));
+    this.pausing = false;
+    if (this.status !== 'completed') this.status = 'paused';
+    this.publish(); return this.snapshot();
+  }
+  private async resetIntelligence() {
+    try { this.intelligence = await this.worker!.reset(); }
+    catch (error) { this.intelligence = unavailable((error as Error).message); }
+    this.busy = false; this.resetting = false; this.publish(); return this.snapshot();
+  }
+  dispose() { this.generation += 1; this.stopTimer(); this.worker?.close(); this.listeners.clear(); }
 }

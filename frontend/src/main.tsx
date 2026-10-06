@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Control, ReplayEvent, Snapshot } from './api';
 import { Graph } from './Graph';
+import { Investigation } from './Investigation';
 import './style.css';
 
 const account = (bank: string, id: string) => `${bank} / ${id}`;
@@ -80,10 +81,12 @@ function App() {
             <span className="muted">{event.paymentFormat} · Source row {event.sourceRow.toLocaleString()}</span></button>)}
         </div></section>
     </div>
+    {snapshot && <Investigation intelligence={snapshot.intelligence} events={events}
+      selectedTransaction={selectedId} onSelectTransaction={setSelectedId} />}
     <section className="panel detail-panel"><h2>Transaction details</h2>
       {selected ? <Details event={selected} /> : <p className="muted">Select a transaction from the feed or graph to see its source fields.</p>}
     </section>
-    <footer>Demonstration subset, not a representative evaluation sample. Detection and risk scoring arrive in a later milestone.</footer>
+    <footer>Curated demonstration subset. Structure strength is a heuristic, not fraud probability. Risk models arrive in milestone 4.</footer>
   </main>;
 }
 

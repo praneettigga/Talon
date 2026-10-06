@@ -1,10 +1,16 @@
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { loadArtifact, Replay } from './replay.js';
+import { PythonWorker, unavailable } from './worker.js';
 
 const path = process.env.TALON_REPLAY_FILE ?? fileURLToPath(new URL('../../data/replay/replay.json', import.meta.url));
 let replay: Replay;
-try { replay = new Replay(await loadArtifact(path)); }
+try {
+  const artifact = await loadArtifact(path);
+  const worker = new PythonWorker();
+  try { replay = new Replay(artifact, null, worker, await worker.initialize(artifact.sourceSha256)); }
+  catch (error) { worker.close(); replay = new Replay(artifact, null, undefined, unavailable((error as Error).message)); }
+}
 catch {
   const message = 'Replay data missing or invalid. Run npm run data:replay, then restart the API.';
   console.error(message);
