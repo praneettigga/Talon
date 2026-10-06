@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { IntelligenceSnapshot, ReplayEvent } from './api';
 import { Graph } from './Graph';
+import { Risk } from './Risk';
 
 export function Investigation({ intelligence, events, selectedTransaction, onSelectTransaction }: {
   intelligence: IntelligenceSnapshot; events: ReplayEvent[]; selectedTransaction: string | null;
@@ -27,11 +28,12 @@ export function Investigation({ intelligence, events, selectedTransaction, onSel
           <span className="muted">{item.transactionIds.length} transfers · {item.entities.length} accounts</span></button>)}</div>}
     </aside>
     <div className="panel case-detail"><div className="panel-heading"><div><h2>{selected ? `Investigation · ${selected.id}` : 'Evidence and timeline'}</h2>
-      <p className="muted">Structural findings are hypotheses; model corroboration is pending.</p></div></div>
+      <p className="muted">Structural findings are hypotheses; scores provide corroboration.</p></div></div>
       {selected ? <>
         <p className="severity-explanation"><span className="severity">{selected.severity}</span> {selected.severityReason}<br />
           <span className="muted">Inputs: {selected.severityInputs.structuralFindings} structures · {selected.severityInputs.affectedEntities} accounts ·
-            {' '}{selected.severityInputs.corroboratedSignals} corroborated signals · highest entity risk: unavailable</span></p>
+            {' '}{selected.severityInputs.corroboratedSignals} corroborated signal types ({selected.severityInputs.signalTypes.join(', ') || 'none'}) · highest structural entity risk:
+            {' '}{selected.severityInputs.highestEntityRisk?.toFixed(1) ?? 'unavailable'} / 100 · threshold {selected.severityInputs.reviewThreshold?.toFixed(1) ?? 'unavailable'}</span></p>
         <Graph events={transactions} selectedId={selectedTransaction} onSelect={onSelectTransaction}
           onSelectAccount={setAccountId} roles={roles} labelPrefix="Case graph" />
         <div className="case-columns"><div><h3>Evidence</h3><div className="evidence-list">
@@ -39,6 +41,7 @@ export function Investigation({ intelligence, events, selectedTransaction, onSel
             {selected.connections.map((link, index) => <p key={index} className="muted">{link.via}: {link.sharedIds.join(', ')} · {link.observedAt.replace('T', ' ')}</p>)}</details>}
           {selected.evidence.map(finding => <article key={finding.id} className="evidence-card"><strong>{finding.typology}</strong>
             <span className="muted"> · Structure strength {finding.strength.toFixed(2)} / 1</span>
+            <p className="muted">{finding.corroborated ? 'Model corroboration observed' : 'No model corroboration'}</p>
             {finding.facts.map(fact => <p key={fact}>{fact}</p>)}
             <p className="muted">{finding.window.first.replace('T', ' ')} → {finding.window.last.replace('T', ' ')} · observed {finding.observedAt.replace('T', ' ')}</p>
             <details><summary>{finding.transactionIds.length} supporting transactions</summary><div className="transaction-links">
@@ -46,11 +49,11 @@ export function Investigation({ intelligence, events, selectedTransaction, onSel
           </article>)}</div></div>
           <div><h3>Case timeline</h3><ol className="timeline">{selected.timeline.map((point, index) => <li key={`${point.findingId}-${index}`}>
             <time>{point.timestamp.replace('T', ' ')}</time><strong>{point.stage}</strong>
-            <span>{point.linkedTransactions} linked transfers · {point.severity}</span></li>)}</ol></div></div>
+            <span>{point.linkedTransactions} linked transfers · {point.severity} · highest entity risk {point.highestEntityRisk?.toFixed(1) ?? 'unavailable'}</span></li>)}</ol></div></div>
         <div className="account-details"><h3>Account evidence</h3><label>Inspect account <select aria-label="Inspect case account" value={entity?.id ?? ''}
           onChange={event => setAccountId(event.target.value)}>{selected.entities.map(item => <option key={item.id} value={item.id}>{item.id} · {item.roles.join(', ')}</option>)}</select></label>
           {entity && <p><strong>{entity.id}</strong> · Observed role: {entity.roles.join(', ')}. Suspicion status: unassessed.</p>}
-          <p className="muted">Risk score: unavailable · Behaviour model: not trained · GNN: not trained</p>
+          <Risk risk={entity ? intelligence.entityRisks[entity.id] : undefined} />
           {features && <><p className="muted">Prior-event feature snapshot at {features.asOf.replace('T', ' ')} · {features.currency} · {features.historyStatus}</p>
             <dl><div><dt>Prior one-hour inflow</dt><dd>{features.incomingTotal} {features.currency} / {features.incomingCount} transfers</dd></div>
               <div><dt>Prior one-hour outflow</dt><dd>{features.outgoingTotal} {features.currency} / {features.outgoingCount} transfers</dd></div>

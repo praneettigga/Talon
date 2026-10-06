@@ -30,5 +30,11 @@ label { font-size: 12px; } select { margin-left: 6px; }.play-state { text-transf
 summary { cursor: pointer; color: #176d60; font-size: 11px; }.transaction-links { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 10px; }.transaction-links button { font-size: 10px; padding: 5px; }
 .timeline { margin: 0; padding: 0 0 0 20px; }.timeline li { padding: 8px 0 12px 7px; border-left: 2px solid #d7e7df; font-size: 11px; }.timeline time, .timeline strong, .timeline span { display: block; margin-bottom: 5px; }.timeline time, .timeline span { color: #637975; }
 .account-details { padding: 20px; border-top: 1px solid #e9eeeb; font-size: 12px; }.account-details select { max-width: 100%; margin: 8px 0; }.account-details dd { font-size: 11px; }
+.model-status { padding: 20px; margin-top: 18px; }.risk-panel { margin-top: 18px; padding-top: 12px; border-top: 1px solid #e9eeeb; }
+.risk-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 12px; }
+.risk-metrics span { display: block; font-size: 11px; color: #637975; }.risk-metrics strong { display: block; font-size: 22px; margin-top: 7px; }
+.contributions, .evaluation { margin-top: 12px; overflow-x: auto; }.contributions table, .evaluation table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e9eeeb; } th { color: #637975; }
+@media (max-width: 540px) { .risk-metrics { grid-template-columns: 1fr; gap: 10px; }.risk-metrics strong { font-size: 18px; } }
 @media (max-width: 1000px) { .investigation { grid-template-columns: 1fr; }.case-list { max-height: 240px; } }
 @media (max-width: 540px) { .case-columns { grid-template-columns: 1fr; }.account-details label { display: block; }.account-details select { display: block; width: 100%; }.account-details dl { grid-template-columns: 1fr; } }

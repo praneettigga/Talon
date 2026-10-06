@@ -12,7 +12,9 @@ import sys
 from .data import ROOT, FILES, TX_HEADER, DataError, digest, patterns, write_manifest
 
 
-def select_attempts(path, enabled):
+def select_attempts(path, enabled, selection='earliest'):
+    if selection not in {'earliest', 'latest'}:
+        raise DataError('Unsupported attempt selection policy')
     patterns(path)  # Validate structure before interpreting blocks.
     attempts = []
     with path.open(encoding='utf-8-sig') as source:
@@ -30,17 +32,18 @@ def select_attempts(path, enabled):
         eligible = [a for a in attempts if a['typology'] == typology and len(a['rows']) <= 100]
         if not eligible:
             raise DataError(f'No complete {typology} attempt within the 100-row demo bound')
-        selected.append(min(eligible, key=lambda a: (min(r[0] for r in a['rows']), a['id'])))
+        choose = min if selection == 'earliest' else max
+        selected.append(choose(eligible, key=lambda a: (min(r[0] for r in a['rows']), a['id'])))
     if not selected:
         raise DataError('No enabled typologies in the dataset manifest')
     return selected
 
 
-def build(directory, manifest, context_limit=120):
+def build(directory, manifest, context_limit=120, selection='earliest'):
     for name in FILES:
         if digest(directory / name) != manifest['files'][name]['sha256']:
             raise DataError(f'{name}: checksum differs from validated manifest; run data:profile')
-    attempts = select_attempts(directory / FILES[2], manifest['enabled_typologies'])
+    attempts = select_attempts(directory / FILES[2], manifest['enabled_typologies'], selection)
     wanted = {row for attempt in attempts for row in attempt['rows']}
     times = sorted({datetime.strptime(row[0], '%Y/%m/%d %H:%M') for row in wanted})
     # Lexicographic comparisons are valid for the fixed-width source timestamp.
@@ -85,7 +88,7 @@ def build(directory, manifest, context_limit=120):
                'sourceSha256': manifest['files'][FILES[0]]['sha256'], 'events': events}
     provenance = {
         'selection_version': 1, 'purpose': 'Curated demonstration; not an evaluation dataset',
-        'policy': 'Earliest complete attempt (at most 100 rows) per enabled typology; '
+        'policy': f'{selection.capitalize()} complete attempt (at most 100 rows) per enabled typology; '
                   '120 lowest SHA-256 ranks of benign source rows within one hour of selected events',
         'context_rows': len(context), 'source_files': manifest['files'],
         'attempts': [{'id': a['id'], 'typology': a['typology'],

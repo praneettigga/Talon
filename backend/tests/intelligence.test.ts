@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { once } from 'node:events';
 import { test } from 'node:test';
 import { PythonWorker, unavailable, type IntelligenceWorker } from '../src/worker.js';
@@ -44,7 +46,8 @@ test('real Python worker produces evidence, preserves feature prefixes, and rese
   assert.equal((await fetch(`${base}/v1/cases/${caseId}`)).status, 200);
   assert.equal((await fetch(`${base}/v1/cases/unknown`)).status, 404);
   const risk = await (await fetch(`${base}/v1/entities/${encodeURIComponent('001/A')}/risk`)).json();
-  assert.equal(risk.riskScore, null); assert.equal(risk.modelStatus, 'not trained');
+  assert.equal(risk.riskScore, null);
+  assert.ok(['historical warmup', 'unavailable'].includes(risk.status));
   assert.deepEqual(await (await fetch(`${base}/v1/events/hi-small:1/features`)).json(), prefix);
   assert.equal((await fetch(`${base}/v1/events/hi-small:99/features`)).status, 404);
 });
@@ -93,4 +96,47 @@ test('pause waits for the in-flight event and does not permit conflicting contro
   assert.equal(replay.snapshot().cursor, 1);
   assert.equal(replay.snapshot().status, 'paused');
   replay.dispose();
+});
+
+test('missing model artifacts preserve structures but expose explicit unavailable risk and evaluation', async context => {
+  const directory = await mkdtemp(join(tmpdir(), 'talon-missing-models-'));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  const manifest = JSON.parse(await readFile(new URL('../../docs/data/hi-small-manifest.json', import.meta.url), 'utf8'));
+  const worker = new PythonWorker(); context.after(() => worker.close());
+  const initial = await worker.initialize(manifest.files['HI-Small_Trans.csv'].sha256, directory);
+  assert.equal(initial.status, 'ready'); assert.equal(initial.models.status, 'unavailable');
+  assert.ok(initial.models.error);
+  const artifact: Artifact = { schemaVersion: 1, dataset: 'Fixture', sourceSha256: manifest.files['HI-Small_Trans.csv'].sha256,
+    events: [event(1), event(2, 'C')] };
+  const replay = new Replay(artifact, null, worker, initial); context.after(() => replay.dispose());
+  replay.control({ action: 'start' }); await replay.advance(); await replay.advance();
+  assert.equal(replay.snapshot().intelligence.cases[0].severity, 'LOW');
+  assert.equal(replay.snapshot().intelligence.decisions[0].risk.riskScore, null);
+  const server = createApp(replay).listen(0, '127.0.0.1'); await once(server, 'listening');
+  context.after(() => { server.closeAllConnections(); server.close(); });
+  const address = server.address(); assert.ok(address && typeof address !== 'string');
+  assert.equal((await fetch(`http://127.0.0.1:${address.port}/v1/evaluation`)).status, 503);
+});
+
+test('trained artifacts reach risk and frozen evaluation endpoints', async context => {
+  let metadata;
+  try { metadata = JSON.parse(await readFile(new URL('../../data/models/current/metadata.json', import.meta.url), 'utf8')); }
+  catch { context.skip('Run models:train for artifact integration'); return; }
+  const worker = new PythonWorker(); context.after(() => worker.close());
+  const initial = await worker.initialize(metadata.sourceSha256);
+  assert.equal(initial.models.status, 'ready');
+  const events = [event(1), event(2, 'C')].map((e, index) => ({ ...e,
+    timestamp: metadata.availableFrom.slice(0, 11) + `00:0${index}:00` }));
+  const replay = new Replay({ schemaVersion: 1, dataset: 'Fixture', sourceSha256: metadata.sourceSha256, events }, null, worker, initial);
+  context.after(() => replay.dispose());
+  replay.control({ action: 'start' }); await replay.advance(); await replay.advance();
+  const server = createApp(replay).listen(0, '127.0.0.1'); await once(server, 'listening');
+  context.after(() => { server.closeAllConnections(); server.close(); });
+  const address = server.address(); assert.ok(address && typeof address !== 'string');
+  const base = `http://127.0.0.1:${address.port}`;
+  const risk = await (await fetch(`${base}/v1/entities/${encodeURIComponent('001/A')}/risk`)).json();
+  assert.equal(risk.status, 'scored'); assert.equal(risk.modelStatus, 'ready');
+  assert.equal(typeof risk.riskScore, 'number'); assert.equal(typeof risk.ginScore, 'number');
+  assert.ok(risk.contributions.length > 0); assert.equal(risk.behaviourScore, null);
+  assert.deepEqual(await (await fetch(`${base}/v1/evaluation`)).json(), metadata.evaluation);
 });

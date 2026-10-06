@@ -24,18 +24,26 @@ def endpoints(event):
 
 
 class Engine:
-    def __init__(self, enabled):
+    def __init__(self, enabled, models=None, model_error=None):
         self.enabled = sorted(SUPPORTED.intersection(enabled))
         self.events = []
+        self.account_events = defaultdict(list)
         self.decisions = []
         self.findings = {}
         self.cases = []
         self.entities = {}
+        self.entity_risks = {}
+        self.account_risk_history = defaultdict(list)
+        self.models = models
+        self.model_status = models.status if models else {
+            'status': 'unavailable', 'error': model_error or 'Models not prepared. Run models:prepare and models:train.',
+            'version': None, 'graphModel': 'IBM Multi-GNN GIN', 'availableFrom': None,
+            'reviewThreshold': None, 'evaluation': None}
 
     def features(self, entity, currency, current, other, now):
         flows = []
         seen = set()
-        for event in self.events:
+        for event in self.account_events[entity]:
             sender, receiver = endpoints(event)
             if entity not in (sender, receiver):
                 continue
@@ -91,6 +99,35 @@ class Engine:
         for feature in features:
             self.entities[feature['accountId']] = feature
         self.events.append(deepcopy(event))
+        for entity in {sender, receiver}:
+            self.account_events[entity].append(self.events[-1])
+        from .signals import graph_snapshot, rule_signals
+        graph = graph_snapshot(self.events, event)
+        rules = rule_signals(self, graph, event)
+        risk = self.models.score({'event': event, 'features': features, 'graph': graph, 'rules': rules}) if self.models else {
+            'status': 'unavailable', 'reason': self.model_status['error'], 'transactionId': event['id'],
+            'asOf': event['timestamp'], 'riskScore': None, 'behaviourScore': None, 'ginScore': None,
+            'behaviourByAccount': {}, 'contributions': [], 'rawMargin': None, 'baseMargin': None,
+            'inputs': {}, 'ruleScores': rules, 'modelVersion': None}
+        decision['risk'] = risk
+        for feature in features:
+            entity = feature['accountId']
+            self.entity_risks[entity] = {**risk, 'id': entity,
+                'transactionRiskScore': risk['riskScore'], 'riskSourceTransactionId': None,
+                'behaviourScore': risk['behaviourByAccount'].get(entity),
+                'aggregation': 'Seven-day time-decayed maximum; 24-hour e-folding time. Prioritisation heuristic.'}
+        for entity in {sender, receiver}:
+            if risk['riskScore'] is not None:
+                self.account_risk_history[entity].append((now, risk['riskScore'], event['id']))
+        # Decay inactive accounts too; preserve the latest transaction's immutable
+        # model timestamp independently of the aggregate's current event time.
+        for entity, item in self.entity_risks.items():
+            recent = [(score * math.exp(-(now - time).total_seconds() / 86400), identity)
+                      for time, score, identity in self.account_risk_history[entity] if now - time <= GRAPH_WINDOW]
+            highest, source = max(recent, key=lambda p: (p[0], p[1])) if recent else (None, None)
+            item['riskScore'] = round(highest, 4) if highest is not None else None
+            item['riskSourceTransactionId'] = source
+            item['riskAsOf'] = event['timestamp']
         active = [e for e in self.events if stamp(e) >= now - GRAPH_WINDOW and endpoints(e)[0] != endpoints(e)[1]]
         for candidate in self.detect(active, event):
             if candidate['typology'] not in self.enabled:
@@ -109,6 +146,17 @@ class Engine:
             candidate['firstSeen'] = previous['firstSeen'] if previous else event['timestamp']
             self.findings[key] = candidate
             self.correlate(candidate, event['timestamp'])
+        for case in self.cases:
+            prior_severity = case['severity']
+            prior_risk = case['severityInputs']['highestEntityRisk']
+            self.refresh_severity(case, event['timestamp'])
+            current_risk = case['severityInputs']['highestEntityRisk']
+            changed = (prior_risk is None) != (current_risk is None) or (prior_risk is not None and current_risk is not None and abs(prior_risk - current_risk) >= 1)
+            if (case['severity'] != prior_severity or changed) and not any(p['timestamp'] == event['timestamp'] for p in case['timeline']):
+                case['timeline'].append({'timestamp': event['timestamp'], 'findingId': '', 'stage': 'Risk updated',
+                    'severity': case['severity'], 'linkedTransactions': len(case['transactionIds']),
+                    'highestEntityRisk': case['severityInputs']['highestEntityRisk'],
+                    'facts': [case['severityReason']]})
         return self.snapshot()
 
     def finding(self, typology, anchors, edges, roles, facts, strength):
@@ -249,21 +297,58 @@ class Engine:
             for entity in f['accountIds']:
                 roles[entity].add(f['roles'].get(entity, 'counterparty'))
         case['entities'] = [{'id': key, 'roles': sorted(value), 'suspect': False} for key, value in sorted(roles.items())]
-        case['severity'] = 'LOW'
-        case['severityInputs'] = {'corroboratedSignals': 0, 'structuralFindings': len(all_findings),
-                                  'affectedEntities': len(roles), 'typologies': case['typologies'], 'highestEntityRisk': None}
-        case['severityReason'] = 'Structural evidence only; behavioural, GNN, and infrastructure corroboration are unavailable. No review escalation.'
+        case['evidence'] = all_findings
+        self.refresh_severity(case, observed)
         stage = {'FAN-IN': 'Collection', 'FAN-OUT': 'Dispersal', 'GATHER-SCATTER': 'Collection → dispersal',
                  'SCATTER-GATHER': 'Structuring → consolidation', 'CYCLE': 'Circular flow',
                  'STACK': 'Layering', 'BIPARTITE': 'Coordinated movement'}[finding['typology']]
         case['timeline'].append({'timestamp': observed, 'findingId': finding['id'], 'stage': stage,
-                                 'severity': 'LOW', 'linkedTransactions': len(case['transactionIds']),
+                                 'severity': case['severity'], 'linkedTransactions': len(case['transactionIds']),
+                                 'highestEntityRisk': case['severityInputs']['highestEntityRisk'],
                                  'facts': finding['facts']})
         case['timeline'].sort(key=lambda t: (t['timestamp'], t['findingId']))
         case['evidence'] = all_findings
 
+    def refresh_severity(self, case, observed):
+        now = datetime.fromisoformat(observed)
+        signals, risks = set(), []
+        for finding in case['evidence']:
+            corroborated = False
+            if now - datetime.fromisoformat(finding['window']['last']) > GRAPH_WINDOW:
+                finding['corroborated'] = False
+                continue
+            for entity in finding['roles']:
+                risk = self.entity_risks.get(entity)
+                if not risk or risk['riskScore'] is None:
+                    continue
+                elapsed = (now - datetime.fromisoformat(risk['asOf'])).total_seconds()
+                if elapsed > GRAPH_WINDOW.total_seconds():
+                    continue
+                risks.append(risk['riskScore'])
+                if risk['behaviourScore'] is not None and risk['behaviourScore'] >= .99:
+                    signals.add('behaviour'); corroborated = True
+                if risk['ginScore'] is not None and risk['ginScore'] >= .8:
+                    signals.add('GIN'); corroborated = True
+            finding['corroborated'] = corroborated
+        highest = round(max(risks), 4) if risks else None
+        threshold = self.model_status['reviewThreshold']
+        severity = 'LOW'
+        if signals and highest is not None and threshold is not None and highest >= threshold:
+            severity = 'MEDIUM'
+            if highest >= max(80, threshold) and (len(signals) >= 2 or len(case['typologies']) >= 2) and len(case['entities']) >= 4:
+                severity = 'HIGH'
+            if highest >= max(95, threshold) and len(signals) >= 2 and len(case['typologies']) >= 2 and len(case['entities']) >= 6:
+                severity = 'CRITICAL'
+        case['severity'] = severity
+        case['severityInputs'] = {'corroboratedSignals': len(signals), 'signalTypes': sorted(signals),
+            'structuralFindings': len(case['evidence']), 'affectedEntities': len(case['entities']),
+            'typologies': case['typologies'], 'highestEntityRisk': highest, 'reviewThreshold': threshold, 'asOf': observed}
+        case['severityReason'] = ('Supported structure + model corroboration + risk above frozen review threshold.' if severity != 'LOW'
+            else 'No review escalation: requires supported structure, model corroboration, and risk above the frozen review threshold.')
+
     def snapshot(self):
         return deepcopy({'status': 'ready', 'error': None, 'enabledTypologies': self.enabled,
                          'ruleWindow': '7 days', 'featureWindow': '1 hour',
-                         'cases': sorted(self.cases, key=lambda c: (-len(c['findingIds']), c['id'])),
-                         'entities': self.entities, 'decisions': self.decisions})
+                         'cases': sorted(self.cases, key=lambda c: (-{'LOW': 0, 'MEDIUM': 1, 'HIGH': 2, 'CRITICAL': 3}[c['severity']], -len(c['findingIds']), c['id'])),
+                         'entities': self.entities, 'decisions': self.decisions,
+                         'entityRisks': self.entity_risks, 'models': self.model_status})

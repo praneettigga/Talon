@@ -9,7 +9,10 @@
     "check": "tsc --noEmit",
     "start": "node dist/index.js",
     "test": "npm run test:python && node --import tsx --test tests/*.test.ts",
-    "test:python": "cd .. && python -m unittest discover -s backend/python/tests -v"
+    "test:python": "cd .. && python -m backend.python.run -m unittest discover -s backend/python/tests -v",
+    "models:prepare": "cd .. && python -m backend.python.run -m backend.python.prepare_models",
+    "models:train": "cd .. && python -m backend.python.run -m backend.python.train_models",
+    "models:replay": "cd .. && python -m backend.python.run -m backend.python.model_replay"
   },
   "dependencies": {
     "express": "^5.1.0",

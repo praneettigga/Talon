@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 import type { IntelligenceSnapshot, ReplayEvent } from './contracts.js';
 
 export interface IntelligenceWorker {
@@ -12,6 +13,8 @@ export interface IntelligenceWorker {
 export const unavailable = (error: string): IntelligenceSnapshot => ({
   status: 'unavailable', error, cases: [], entities: {}, decisions: [], enabledTypologies: [],
   ruleWindow: '7 days', featureWindow: '1 hour',
+  entityRisks: {}, models: { status: 'unavailable', error, version: null, graphModel: 'IBM Multi-GNN GIN',
+    availableFrom: null, reviewThreshold: null, evaluation: null },
 });
 
 export class PythonWorker implements IntelligenceWorker {
@@ -21,7 +24,8 @@ export class PythonWorker implements IntelligenceWorker {
   private pending = new Map<number, { resolve: (data: IntelligenceSnapshot) => void;
     reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   constructor() {
-    this.process = spawn(process.env.TALON_PYTHON ?? 'python', ['-u', '-m', 'backend.python.worker'], {
+    const localPython = fileURLToPath(new URL('../../.venv/bin/python', import.meta.url));
+    this.process = spawn(process.env.TALON_PYTHON ?? (existsSync(localPython) ? localPython : 'python'), ['-u', '-m', 'backend.python.worker'], {
       cwd: fileURLToPath(new URL('../../', import.meta.url)), stdio: 'pipe',
     });
     const lines = createInterface({ input: this.process.stdout });
@@ -33,7 +37,7 @@ export class PythonWorker implements IntelligenceWorker {
         clearTimeout(pending.timer); this.pending.delete(reply.id);
         if (reply.error) { pending.reject(new Error(reply.error)); return; }
         const result = reply.result;
-        if (result?.status !== 'ready' || !Array.isArray(result.cases) || !Array.isArray(result.decisions) ||
+        if (result?.status !== 'ready' || !result.models || !result.entityRisks || !Array.isArray(result.cases) || !Array.isArray(result.decisions) ||
             !Array.isArray(result.enabledTypologies) || !result.entities) {
           pending.reject(new Error('Invalid intelligence worker response')); return;
         }
@@ -61,8 +65,9 @@ export class PythonWorker implements IntelligenceWorker {
       this.process.stdin.write(JSON.stringify({ id, ...command }) + '\n');
     });
   }
-  initialize(sourceSha256: string) {
+  initialize(sourceSha256: string, modelsDirectory?: string) {
     return this.request({ command: 'init', sourceSha256,
+      modelsDirectory: modelsDirectory ?? process.env.TALON_MODELS_DIR ?? fileURLToPath(new URL('../../data/models/current', import.meta.url)),
       manifest: fileURLToPath(new URL('../../docs/data/hi-small-manifest.json', import.meta.url)) });
   }
   event(event: ReplayEvent) { return this.request({ command: 'event', event }); }

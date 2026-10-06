@@ -65,15 +65,41 @@ export interface InvestigationCase {
   entities: { id: string; roles: string[]; suspect: boolean }[];
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   severityInputs: { corroboratedSignals: number; structuralFindings: number; affectedEntities: number;
-    typologies: string[]; highestEntityRisk: number | null };
+    typologies: string[]; highestEntityRisk: number | null; signalTypes: string[];
+    reviewThreshold: number | null; asOf: string };
   severityReason: string; evidence: Finding[];
   connections: { findingId: string; priorFindingId: string; via: string; sharedIds: string[]; observedAt: string }[];
   timeline: { timestamp: string; findingId: string; stage: string; severity: string;
-    linkedTransactions: number; facts: string[] }[];
+    linkedTransactions: number; facts: string[]; highestEntityRisk?: number | null }[];
 }
 export interface IntelligenceSnapshot {
   status: 'ready' | 'unavailable'; error: string | null;
   enabledTypologies: string[]; ruleWindow: string; featureWindow: string;
   cases: InvestigationCase[]; entities: Record<string, AccountFeatures>;
-  decisions: { transactionId: string; timestamp: string; features: AccountFeatures[] }[];
+  decisions: { transactionId: string; timestamp: string; features: AccountFeatures[]; risk: DecisionRisk }[];
+  entityRisks: Record<string, EntityRisk>; models: ModelStatus;
+}
+export interface DecisionRisk {
+  status: 'scored' | 'historical warmup' | 'unavailable'; reason: string;
+  transactionId: string; asOf: string; riskScore: number | null; behaviourScore: number | null;
+  ginScore: number | null; behaviourByAccount: Record<string, number | null>;
+  contributions: { feature: string; value: number }[]; rawMargin: number | null; baseMargin: number | null;
+  inputs: Record<string, number>; ruleScores: Record<string, number>; modelVersion: string | null;
+}
+export interface EntityRisk extends DecisionRisk {
+  id: string; transactionRiskScore: number | null; riskSourceTransactionId: string | null; aggregation: string; riskAsOf: string;
+}
+export interface DetectionMetrics {
+  rows: number; positives: number; threshold: number; precision: number | null; recall: number | null;
+  prAuc: number | null; falsePositiveRate: number | null; brierScore: number;
+  confusion: { tn: number; fp: number; fn: number; tp: number };
+}
+export interface EvaluationReport {
+  modelVersion: string; test: DetectionMetrics; testReviewGate: DetectionMetrics; limitations: string[];
+  split: Record<string, { rows: number; positives: number; endExclusive: string }>;
+  thresholdSelection: { reviewThreshold: number; targetFalsePositiveRate: number; metrics: DetectionMetrics };
+}
+export interface ModelStatus {
+  status: 'ready' | 'unavailable'; error: string | null; version: string | null; graphModel: string;
+  availableFrom: string | null; reviewThreshold: number | null; evaluation: EvaluationReport | null;
 }

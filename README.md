@@ -1,22 +1,24 @@
 # Talon — Financial Fraud Intelligence
 
 Talon is being built to reconstruct explainable laundering cases from transaction networks.
-Milestones 1–3 provide validated data preparation, deterministic transaction replay,
-event-time features, supported structural rules, and an evidence-backed case view.
-Learned risk scoring and intervention simulation are later milestones.
+Milestones 1–4 provide validated data preparation, deterministic replay, event-time
+features, supported structural rules, evidence-backed cases, and learned risk scoring.
+Intervention simulation and case-reconstruction evaluation are later milestones.
 
 ## Requirements and setup
 
 - Node.js 22.12+ and npm (verified locally with Node 26).
-- Python 3.11+ available as `python` for the persistent intelligence worker. `TALON_PYTHON`
-  can select another executable. The worker and Python tests use only the standard library;
-  `venv`/pip are needed only for the automated Kaggle download.
+- Python 3.11+ available as `python`. The worker and model commands prefer `.venv/bin/python`
+  when present; `TALON_PYTHON` overrides it. Model dependencies are pinned in `backend/`.
+  Data preparation and structural rules can still run with only the standard library.
 - Kaggle legacy API credentials for automated download, or a manually downloaded Kaggle ZIP.
 
 ```bash
 npm ci
 python -m venv .venv
 .venv/bin/python -m pip install -r pipeline/requirements.txt
+.venv/bin/python -m pip install -r backend/requirements-torch.txt
+.venv/bin/python -m pip install -r backend/requirements.txt
 ```
 
 Obtain **Legacy API Credentials** from [Kaggle Settings → API](https://www.kaggle.com/settings/api).
@@ -79,9 +81,18 @@ truth metadata for preparation/evaluation, not runtime prediction features.
 ## Run and verify
 
 ```bash
-npm run data:replay
+npm run models:prepare
+npm run models:train
+npm run models:replay
 npm run dev
 ```
+
+Run model preparation/training once after setting up Python dependencies. They use the
+validated local HI-Small files, need no Kaggle credentials or GPU, and leave learned artifacts
+in gitignored `data/models/current/`. The checked-in evaluation report is not a substitute
+for those artifacts. Restart the API after regenerating artifacts or replay data.
+`npm run data:replay` still restores the original early milestone-2/3 demo, whose events
+precede the model cutoff and deliberately have no learned scores.
 
 `npm run dev` from the repository root is an optional full-stack shortcut: it starts both
 the API and the UI. Each application can also be run from its own directory:
@@ -105,20 +116,29 @@ toggle **All observed events** to see the full emitted network. Bank/account pai
 distinct node identities, and every transfer has its own edge. The service is shared
 between browser tabs; reconnecting restores the current prefix. Stop both services with Ctrl+C.
 
-The builder checks the validated source checksums, chooses the earliest complete attempt
+The original `data:replay` builder checks source checksums and chooses the earliest complete attempt
 of each enabled typology (at most 100 source rows per attempt), and includes 120 benign
 rows within one hour of selected pattern events. Context selection uses the lowest
 SHA-256 ranks of `talon-replay-v1:<source-row>`, so it is reproducible without random state.
 Rows are ordered by event time, then 1-based CSV data-row number (header excluded).
-The current data produces 220 events: 100 pattern transactions plus 120 context rows.
+That early demo produces 220 events: 100 pattern transactions plus 120 context rows.
 The artifact is bounded to 1,000 events and is a curated demo, **not a training/test split
 or representative evaluation sample**.
+
+`models:replay` uses the **latest** complete attempt of each enabled typology, with the same
+100-row attempt bound and deterministic 120-row benign-context policy. The current later
+demo has **183 events** (63 pattern transactions and 120 benign context rows), all at or after
+the frozen scoring cutoff. Its full source attempts remain in preparation-only provenance;
+findings are reconstructed from observed transactions, never source pattern IDs. Some later
+examples do not match the deliberately narrow rule definitions. This demo is separate from
+the temporal evaluation population, and later dates beyond the evaluated window are unvalidated.
 
 `data/replay/replay.json` contains runtime transaction fields, with source IDs and decimal
 amount strings preserved. `data/replay/provenance.json` separately records original rows,
 ground-truth labels, selected attempts, policy, and source hashes. It is never served by
 the API or consumed for runtime replay. Rebuilding both artifacts is byte-for-byte deterministic.
-Source labels and pattern-case ground truth do not enter the runtime worker or UI.
+Per-row source labels and pattern-case ground truth do not enter inference or the UI.
+Aggregated frozen evaluation metrics are displayed separately.
 Named findings are generated from observed graph structure and the manifest's verified
 typology vocabulary.
 
@@ -132,8 +152,9 @@ Express listens on http://127.0.0.1:3001; Vite proxies `/v1` locally:
 | `POST /v1/replay/control` | JSON `{"action":"start"}`, `pause`, `reset`, or `{"action":"speed","speed":5}` |
 | `GET /v1/cases` | Correlated structural cases and verified enabled typologies |
 | `GET /v1/cases/:id` | Case evidence, observed transactions, roles, severity inputs, and timeline; merged IDs resolve to the surviving case |
-| `GET /v1/entities/:id/risk` | Latest prior-event account features and structural evidence; `riskScore: null`, models not trained |
-| `GET /v1/events/:id/features` | Immutable feature snapshot used for an already observed event |
+| `GET /v1/entities/:id/risk` | Entity risk, latest transaction score, behaviour/GIN outputs, XGBoost contributions, prior-event features and evidence |
+| `GET /v1/events/:id/features` | Immutable feature and model decision snapshot for an already observed event |
+| `GET /v1/evaluation` | Frozen split, source provenance, model settings, calibration, thresholds and transaction metrics; 503 when models are unavailable |
 
 Invalid controls return 400; starting a completed replay returns 409 until reset. Missing
 or malformed replay data produces an explicit unavailable state and 503 on controls.
@@ -146,6 +167,10 @@ for any in-flight event. Reset resets both processes and discards stale response
 is used. A missing worker, manifest/hash mismatch, process exit, or timeout produces an
 explicit unavailable intelligence state; runtime worker failures pause the replay without
 committing an unprocessed event. Restart the API to recover a failed worker.
+Missing dependencies/artifacts or artifact checksum mismatch leave structural intelligence
+available with `models.status: unavailable` and null scores. A model inference failure pauses
+replay and exposes unavailable intelligence. No fallback heuristic is presented as learned risk.
+`TALON_MODELS_DIR` can select another locally trained artifact directory.
 
 ## Milestone 3 investigation
 
@@ -189,14 +214,106 @@ case IDs survive growth; merged IDs are retained as aliases. Sources remain coun
 unless a supported structural role is observed, and every entity remains unassessed for suspicion.
 Each merge records the explicit transaction/anchor links; **Why these findings belong together**
 exposes them. Older evidence windows remain recorded when a new window starts.
-All cases remain **LOW** with zero corroborated signals and `highestEntityRisk: null` until
-milestone 4 adds model corroboration. The severity view exposes these inputs explicitly.
-Account risk, Isolation Forest, GNN, and XGBoost outputs are unavailable, never fabricated.
+Without models, cases remain **LOW** with zero corroborated signals and null entity risk.
+With milestone 4 artifacts, severity can rise only with both model corroboration and risk
+above the frozen review threshold. Scores never automatically mark sources or other accounts
+as suspects. The severity view exposes the exact inputs and observation time.
 
-The current 220-event sample yields five correlated cases and 18 structural findings. This
+The original 220-event sample yields five correlated cases and 18 structural findings. This
 is a reproducible demo result, not precision/recall evaluation. Some selected typologies do
 not match the deliberately narrow v1 rules; evaluation and broader validated coverage remain
 for later work.
+
+## Milestone 4 learned scoring
+
+All model code, dependencies, and the licensed IBM adapter live under `backend/`. The
+pipeline prepares **12,423** real source transactions from the first **10 days**: all 4,522
+labelled positives (including RANDOM and ungrouped positives), up to 6,000 deterministic
+benign rows touching pattern/control accounts, and 2,000 global benign rows. Overlap is
+deduplicated. Controls are the 32 most frequent accounts in the first 20,000 rows after
+retaining benign seed rows. Selection is case-enriched, not representative of deployment
+prevalence; no metrics claim to describe the complete HI-Small benchmark.
+
+The first exploratory 14-day run had only two benign examples in its test tail. It was
+rejected as inadequate for false-positive evaluation. The fixed 10-day envelope keeps
+substantial benign support in every split; model hyperparameters were not tuned on final
+test performance. This is an initial development evaluation, not an independent benchmark.
+
+The split uses elapsed event time, keeping equal timestamps together:
+
+| Window | Dates (end exclusive) | Rows / positives |
+| --- | --- | --- |
+| Train, 60% | September 1 → September 7 | 7,404 / 2,530 |
+| Validation, 20% | September 7 → September 9 | 2,698 / 1,036 |
+| Test, 20% | September 9 → September 11 | 2,321 / 956 |
+
+1. **Isolation Forest:** 64 trees, benign-labelled training-transaction account snapshots
+   only. Inputs exclude labels, IDs, named-rule scores, GIN outputs and case metadata.
+   Fit separate currency baselines with at least 32 snapshots and five prior observations.
+   Final baselines are available for US Dollar (2,233 snapshots) and Euro (49). Anomaly is
+   the empirical percentile of the forest's anomaly output against its benign fit distribution,
+   expressed as 0–1 unusualness, not fraud probability. Sparse histories/untrained currencies
+   return null; amount z-score is also absent with fewer than five observations or zero variance.
+2. **IBM Multi-GNN GIN:** pinned upstream `GINe` class, Apache-2.0, two layers, hidden width
+   16, edge updates, eight epochs, fixed seed 42, CPU. Each decision uses its own observed
+   two-hop/seven-day prefix graph, capped at the newest 128 edges. Node features are constant;
+   edge features use relative age, normalized log amount received and one-hot currency/payment
+   format. Training-only normalization/vocabulary includes unknown categories. Fit is bounded
+   to 2,048 hash-selected snapshots per prefix. This runs the actual IBM model class, with a
+   Talon temporal adapter; it does not reproduce IBM's full experiments. Source and license:
+   [vendored model provenance](backend/python/vendor/README.md). A compatible formatted
+   transaction CSV is exported under `data/models/dataset/`, for offline interoperability only.
+3. **XGBoost fusion:** 64 depth-three trees. Only forward out-of-fold upstream predictions
+   enter fusion fitting: fit on days 1–2, predict days 3–4; fit on days 1–4, predict days 5–6.
+   No fusion training row was used to fit its upstream component. The final upstream artifacts
+   are refit on the first six days; validation/test labels never enter those fits. Inputs are
+   anomaly availability/score, GIN score, seven rule strengths and prior flow features.
+   Account age and synthetic-enrichment inputs are omitted because neither exists yet.
+4. **Calibration and threshold:** logistic/Platt scaling on September 7–8 only. September
+   8–9 selects a review threshold targeting at most 1% false positives **with the transaction
+   review gate**. Freeze the threshold (**79.2383 / 100**) and all artifacts before final testing.
+   Runtime scoring begins September 9; earlier events are explicit historical warmup with null
+   scores, even when artifacts are loaded. No retrospective score uses future-trained weights.
+
+The review gate requires a supported structure plus behaviour anomaly ≥0.99 or GIN ≥0.80,
+and fused risk at/above the threshold. The reported transaction gate uses that event's
+bounded rule strengths and endpoint model signals. Case severity instead uses explicit
+structural-role accounts and the case's evidence; transaction metrics are not case metrics.
+
+| Final test metric | Risk threshold alone | With transaction review gate |
+| --- | --- | --- |
+| Precision | 91.9% | 95.1% |
+| Recall | 84.2% | 46.5% |
+| False-positive rate | 5.20% | 1.68% |
+| TP / FP / FN / TN | 805 / 71 / 151 / 1294 | 445 / 23 / 511 / 1342 |
+
+Risk-ranking PR-AUC (average precision) is **0.931**; Brier score is **0.077**. The validation
+gate met the target (0.964%), but final test FPR **exceeded 1%**. The threshold was not retuned
+after testing. The checked-in [evaluation report](docs/data/milestone4-evaluation.json) records
+source hashes, split boundaries, fold provenance, settings, artifact hashes and confusion counts.
+The UI exposes the same frozen report. Sparse demo histories differ from the richer modeling
+prefixes, so demo scores are not additional evaluation results.
+
+Each transaction stores its decision timestamp, model version, inputs, scores and native
+XGBoost TreeSHAP contributions. Signed contributions sum with the base value to the raw
+XGBoost margin **before calibration**; they are not additive percentages of the displayed risk.
+Entity risk is a seven-day time-decayed maximum of its scored transfers, with a 24-hour
+e-folding time. Inactive accounts decay as replay time advances too. `riskAsOf` records the
+aggregate time; `asOf` records the latest transaction decision. The API identifies the contributing transaction; displayed contributions
+explain the latest transaction, not that aggregate. Neither entity risk nor severity is a
+calibrated fraud probability. Earlier decisions are immutable, and reset recreates them.
+
+Case severity stays LOW without corroboration and above-threshold structural-account risk;
+MEDIUM meets both. HIGH additionally needs risk ≥80, at least four entities, and either two
+signal types or two typologies. CRITICAL needs risk ≥95, six entities, two signal types and
+two typologies. All bands also require the frozen review threshold. Expired evidence cannot
+corroborate a case. Evidence growth, risk changes and severity changes appear in the timeline.
+
+Model artifacts are local, hash-checked and source-bound. Only load your locally trained
+joblib artifacts; they are not a portable untrusted interchange format. The original raw
+labels, pattern attempts and replay provenance remain preparation/evaluation-only and are
+never loaded by runtime inference. Model commands are also available from `backend/`:
+`npm run models:prepare`, `npm run models:train`, `npm run models:replay`.
 
 ```bash
 npm test
@@ -216,7 +333,8 @@ CHROMIUM_PATH=/usr/bin/chromium npm run test:ui
 Set `TALON_UI_URL` if Vite uses a different port. Screenshots go to gitignored
 `frontend/test-results/`. The browser test resets the shared local replay and checks controls,
 pause/reload, full completion, identical reset events/features/cases, case evidence,
-investigation graphs, account selection, and mobile layout.
+investigation graphs, account selection, model contributions, frozen evaluation, and mobile layout.
+For milestone 4 browser acceptance, prepare model artifacts and the later replay first.
 
 Tests create temporary, explicitly artificial records to verify validation and downloader
 failure handling. They are not demonstration data or benchmark results. The real milestone
@@ -227,7 +345,7 @@ authenticated automated download has not yet been exercised against Kaggle.
 ## Components and provenance
 
 - `frontend/`: React + TypeScript + Vite with Cytoscape.js and simple CSS.
-- `backend/`: Express replay/REST/SSE service plus `python/` feature/rule/case worker and tests.
+- `backend/`: Express replay/REST/SSE service, Python feature/rule/case worker, model training/inference and tests.
 - `pipeline/`: Python download, profiling, deterministic replay preparation, and tests.
 - [Architecture and full plan](docs/plans/talon-12-hour-hackathon-plan.md).
 
@@ -236,5 +354,5 @@ Data is the **IBM AMLWorld HI-Small synthetic AML benchmark**, not real bank rec
 [official Kaggle distribution](https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml)
 and identifies the data license as [CDLA-Sharing-1.0](https://spdx.org/licenses/CDLA-Sharing-1.0.html).
 Downloads use the [Kaggle CLI](https://github.com/Kaggle/kaggle-api).
-No synthetic device enrichment or learned models are present yet. Current findings describe
-observed structure and require further corroboration before review escalation.
+No synthetic device enrichment is present yet. Structural findings require model corroboration
+and threshold support before review escalation. Intervention simulation remains for milestone 5.

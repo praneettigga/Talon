@@ -1,0 +1,140 @@
+{
+  "artifactHashes": {
+    "behaviour.joblib": "dcbf086996f497fc7f65d596be16d2216a780a1c1913ee157a5c8b724f7f1fb1",
+    "fusion.json": "41bea85205523e45eb31939fe220b7e322d91822045c3e218e2f2484c9cc8d8b",
+    "gin.pt": "557e87083625a4be83ba3517aff117a0ac3b0e2eefbc31785a6e4c40c51f7baf"
+  },
+  "behaviourCurrencies": {
+    "Euro": 49,
+    "US Dollar": 2233
+  },
+  "calibration": {
+    "endExclusive": "2022-09-08T00:00:00",
+    "intercept": 0.12391103368377233,
+    "method": "Platt logistic scaling on first validation half",
+    "slope": 1.0122165221855601
+  },
+  "dataset": {
+    "dataset": "IBM AMLWorld HI-Small synthetic AML benchmark",
+    "limitation": "Case-enriched bounded synthetic subset; metrics are not full HI-Small estimates.",
+    "positives": 4522,
+    "rows": 12423,
+    "schemaVersion": 1,
+    "selection": "First 10 days; all labelled positives, 6000 lowest-hash benign rows touching pattern/control accounts, 2000 lowest-hash global benign rows; seed control population: top 32 accounts among benign rows in first 20000 source rows.",
+    "sourceSha256": "b19d39f515523373f991b689c07e11e7b0b95c17a2c27a87d91584ae16c5b040",
+    "split": {
+      "end": "2022-09-11T00:00:00",
+      "trainEnd": "2022-09-07T00:00:00",
+      "validationEnd": "2022-09-09T00:00:00"
+    },
+    "start": "2022-09-01T00:00:00"
+  },
+  "forwardFolds": [
+    {
+      "endExclusive": "2022-09-05T00:00:00",
+      "firstFusionTime": "2022-09-03T00:01:00",
+      "fusionRows": 1446,
+      "maxFitLabelTime": "2022-09-02T23:58:00",
+      "upstreamFitRows": 3303
+    },
+    {
+      "endExclusive": "2022-09-07T00:00:00",
+      "firstFusionTime": "2022-09-05T00:00:00",
+      "fusionRows": 2655,
+      "maxFitLabelTime": "2022-09-04T23:58:00",
+      "upstreamFitRows": 4749
+    }
+  ],
+  "gin": {
+    "commit": "252b0252afca109d1d216c411c59ff70753b25fc",
+    "epochs": 8,
+    "fitSnapshotCap": 2048,
+    "hidden": 16,
+    "hops": 2,
+    "implementation": "IBM Multi-GNN GINe",
+    "layers": 2,
+    "snapshotEdgeCap": 128
+  },
+  "limitations": [
+    "Bounded case-enriched synthetic subset, not full-benchmark estimates.",
+    "GIN predicts on two-hop observed prefixes, not the full IBM experiment configuration.",
+    "Sparse histories often leave behavioural scores unavailable.",
+    "Entity time-decayed risk and case severity are prioritisation heuristics, not calibrated probabilities.",
+    "No synthetic enrichment; account age unavailable. Case-reconstruction evaluation is a later milestone."
+  ],
+  "modelVersion": "talon-m4-v1",
+  "protocolNotes": "A 14-day exploratory envelope had only two benign test examples and was rejected for FPR evaluation. The fixed 10-day envelope has class support across partitions; final model settings were not tuned on test performance.",
+  "prAucDefinition": "Average precision (step-wise PR integral), using unfiltered transaction-risk ranking.",
+  "schemaVersion": 1,
+  "split": {
+    "test": {
+      "endExclusive": "2022-09-11T00:00:00",
+      "positives": 956,
+      "rows": 2321
+    },
+    "train": {
+      "endExclusive": "2022-09-07T00:00:00",
+      "positives": 2530,
+      "rows": 7404
+    },
+    "validation": {
+      "endExclusive": "2022-09-09T00:00:00",
+      "positives": 1036,
+      "rows": 2698
+    }
+  },
+  "test": {
+    "brierScore": 0.07741763993040089,
+    "confusion": {
+      "fn": 151,
+      "fp": 71,
+      "tn": 1294,
+      "tp": 805
+    },
+    "falsePositiveRate": 0.05201465201465202,
+    "positives": 956,
+    "prAuc": 0.9306838044927943,
+    "precision": 0.9189497716894978,
+    "recall": 0.8420502092050209,
+    "rows": 2321,
+    "threshold": 79.2382718879031
+  },
+  "testReviewGate": {
+    "brierScore": 0.07741763993040089,
+    "confusion": {
+      "fn": 511,
+      "fp": 23,
+      "tn": 1342,
+      "tp": 445
+    },
+    "falsePositiveRate": 0.01684981684981685,
+    "positives": 956,
+    "prAuc": 0.9306838044927943,
+    "precision": 0.9508547008547008,
+    "recall": 0.46548117154811713,
+    "rows": 2321,
+    "threshold": 79.2382718879031
+  },
+  "thresholdSelection": {
+    "metrics": {
+      "brierScore": 0.06447912985833941,
+      "confusion": {
+        "fn": 302,
+        "fp": 8,
+        "tn": 822,
+        "tp": 237
+      },
+      "falsePositiveRate": 0.00963855421686747,
+      "positives": 539,
+      "prAuc": 0.9390882125866027,
+      "precision": 0.9673469387755103,
+      "recall": 0.4397031539888683,
+      "rows": 1369,
+      "threshold": 79.2382718879031
+    },
+    "reviewThreshold": 79.2382718879031,
+    "targetFalsePositiveRate": 0.01,
+    "windowEndExclusive": "2022-09-09T00:00:00",
+    "windowStart": "2022-09-08T00:00:00"
+  }
+}

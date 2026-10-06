@@ -18,9 +18,11 @@ catch {
 }
 const app = createApp(replay);
 const port = Number(process.env.PORT ?? 3001);
-const server = app.listen(port, '127.0.0.1', () => {
+const server = app.listen(port, '127.0.0.1');
+server.once('listening', () => {
   console.log(`Talon API: http://127.0.0.1:${port}`);
 });
+server.on('error', error => { console.error(`Talon API failed to listen: ${error.message}`); replay.dispose(); process.exitCode = 1; });
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => { replay.dispose(); server.close(); server.closeAllConnections(); });
 }

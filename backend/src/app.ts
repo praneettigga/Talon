@@ -6,7 +6,9 @@ export function createApp(replay: Replay) {
   const app = express();
   app.use(express.json({ limit: '8kb' }));
   app.get('/v1/health', (_request, response) => {
-    response.json({ status: 'ok', milestone: 3, replay: replay.snapshot().status, intelligence: replay.snapshot().intelligence.status });
+    const snapshot = replay.snapshot();
+    response.json({ status: 'ok', milestone: 4, replay: snapshot.status, intelligence: snapshot.intelligence.status,
+      models: snapshot.intelligence.models.status });
   });
   app.get('/v1/events', (_request, response) => response.json(replay.snapshot()));
   app.get('/v1/events/:id/features', (request, response) => {
@@ -47,9 +49,14 @@ export function createApp(replay: Replay) {
     if (intelligence.status !== 'ready') { response.status(503).json({ error: intelligence.error }); return; }
     const features = intelligence.entities[request.params.id];
     if (!features) { response.status(404).json({ error: 'Entity not observed' }); return; }
-    response.json({ id: request.params.id, riskScore: null, modelStatus: 'not trained', features,
+    response.json({ ...intelligence.entityRisks[request.params.id], modelStatus: intelligence.models.status, features,
       evidence: intelligence.cases.flatMap(item => item.evidence).filter(finding => finding.accountIds.includes(request.params.id)),
-      explanation: 'Structural evidence only; risk models are pending milestone 4.' });
+      explanation: 'Entity risk is a time-decayed transaction-score maximum. Roles do not establish suspicion.' });
+  });
+  app.get('/v1/evaluation', (_request, response) => {
+    const models = replay.snapshot().intelligence.models;
+    if (models.status !== 'ready') { response.status(503).json({ status: 'unavailable', error: models.error }); return; }
+    response.json(models.evaluation);
   });
   app.get('/v1/events/stream', (request, response) => {
     response.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache',
