@@ -11,6 +11,8 @@ def main():
     enabled = []
     models = None
     model_error = None
+    enrichment = None
+    enrichment_error = None
     for line in sys.stdin:
         request = {}
         try:
@@ -30,16 +32,26 @@ def main():
                 except Exception as error:
                     models = None
                     model_error = f'Models unavailable: {error}'
-                engine = Engine(enabled, models, model_error)
+                try:
+                    from .enrichment import Enrichment
+                    enrichment = Enrichment(request['enrichmentPath'], request.get('replaySha256'), request['sourceSha256'])
+                    enrichment_error = None
+                except Exception as error:
+                    enrichment = None
+                    enrichment_error = f'Synthetic context unavailable: {error}'
+                engine = Engine(enabled, models, model_error, enrichment, enrichment_error)
                 result = engine.snapshot()
             elif engine is None:
                 raise ValueError('Worker has not been initialized')
             elif command == 'reset':
-                engine = Engine(enabled, models, model_error)
+                engine = Engine(enabled, models, model_error, enrichment, enrichment_error)
                 result = engine.snapshot()
             elif command == 'event':
                 # The service sends runtime fields only. No ground truth is loaded.
                 result = engine.process(request['event'])
+            elif command == 'simulate':
+                from .interventions import simulate
+                result = simulate(request['snapshot'])
             else:
                 raise ValueError('Unknown worker command')
             response = {'id': request['id'], 'result': result}

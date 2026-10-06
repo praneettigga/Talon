@@ -34,6 +34,19 @@ export const controlSchema = z.discriminatedUnion('action', [
 export type ReplayEvent = z.infer<typeof eventSchema>;
 export type Artifact = z.infer<typeof artifactSchema>;
 export type Control = z.infer<typeof controlSchema>;
+const accounts = z.array(text.max(200)).min(1).max(32).refine(ids => new Set(ids).size === ids.length, 'Account IDs must be unique');
+export const simulationSchema = z.object({
+  caseId: text.max(100), heldAccountIds: accounts, compareHeldAccountIds: accounts.optional(),
+  sourceAccountIds: accounts.optional(), expectedCursor: z.number().int().min(0).max(1000).optional(),
+}).strict().superRefine((value, context) => {
+  if (value.compareHeldAccountIds && !value.heldAccountIds.every(id => value.compareHeldAccountIds!.includes(id))) {
+    context.addIssue({ code: 'custom', message: 'Comparison hold set must include the initial hold set' });
+  }
+});
+export type SimulationCommand = z.infer<typeof simulationSchema>;
+export type FrozenSimulation = SimulationCommand & {
+  case: InvestigationCase; events: ReplayEvent[]; observedAt: string; snapshotCursor: number;
+};
 export interface Snapshot {
   status: 'paused' | 'running' | 'completed' | 'unavailable';
   speed: number;
@@ -76,8 +89,9 @@ export interface IntelligenceSnapshot {
   status: 'ready' | 'unavailable'; error: string | null;
   enabledTypologies: string[]; ruleWindow: string; featureWindow: string;
   cases: InvestigationCase[]; entities: Record<string, AccountFeatures>;
-  decisions: { transactionId: string; timestamp: string; features: AccountFeatures[]; risk: DecisionRisk }[];
+  decisions: { transactionId: string; timestamp: string; features: AccountFeatures[]; risk: DecisionRisk; context: DecisionContext }[];
   entityRisks: Record<string, EntityRisk>; models: ModelStatus;
+  enrichment: EnrichmentSnapshot;
 }
 export interface DecisionRisk {
   status: 'scored' | 'historical warmup' | 'unavailable'; reason: string;
@@ -102,4 +116,34 @@ export interface EvaluationReport {
 export interface ModelStatus {
   status: 'ready' | 'unavailable'; error: string | null; version: string | null; graphModel: string;
   availableFrom: string | null; reviewThreshold: number | null; evaluation: EvaluationReport | null;
+}
+export interface DeviceContext {
+  accountId: string; deviceId: string; ipCluster: string; location: string; firstSeen: string;
+  scenario: 'individual context' | 'shared-network control' | 'shared-device demonstration';
+}
+export interface InfrastructureLink {
+  id: string; kind: 'device' | 'network'; value: string; accountIds: string[]; firstSeen: string;
+  observedAt: string; supportingFindingIds: string[]; supportsStructure: boolean; scenarios: string[]; facts: string[];
+}
+export interface EnrichmentSnapshot {
+  status: 'ready' | 'unavailable'; error: string | null; label: string; asOf: string | null;
+  usedInRiskModel: false; affectsSeverity: false; accounts: Record<string, DeviceContext>; links: InfrastructureLink[];
+}
+export interface DecisionContext {
+  status: 'ready' | 'unavailable'; label: string; asOf: string; accounts: DeviceContext[]; links: InfrastructureLink[];
+}
+export interface SimulationScenario {
+  name: 'initial' | 'comparison'; heldAccountIds: string[]; interruptedTransferIds: string[]; interruptedTransferCount: number;
+  remainingTransferIds: string[]; remainingTransferCount: number; noLongerReachableAccountIds: string[];
+  reachableAccountIds: string[]; directlyTouchedAccountIds: string[]; touchedCounterpartyIds: string[];
+  remainingRouteCount: number; remainingAlternateRouteCount: number; routesTruncated: boolean;
+  remainingRoutes: { destination: string; accountIds: string[]; transactionIds: string[]; alternateToInterruptedBaseline: boolean }[];
+}
+export interface SimulationResult {
+  status: 'ready'; caseId: string; snapshotCursor: number; observedAt: string; label: string;
+  sourceAccountIds: string[]; sourcePolicy: string;
+  baseline: { transferCount: number; accountCount: number; reachableAccountIds: string[] };
+  scenarios: SimulationScenario[];
+  comparison: { additionalInterruptedTransferIds: string[]; additionalUnreachableAccountIds: string[] } | null;
+  method: string;
 }

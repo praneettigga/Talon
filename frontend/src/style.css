@@ -31,6 +31,17 @@ summary { cursor: pointer; color: #176d60; font-size: 11px; }.transaction-links 
 .timeline { margin: 0; padding: 0 0 0 20px; }.timeline li { padding: 8px 0 12px 7px; border-left: 2px solid #d7e7df; font-size: 11px; }.timeline time, .timeline strong, .timeline span { display: block; margin-bottom: 5px; }.timeline time, .timeline span { color: #637975; }
 .account-details { padding: 20px; border-top: 1px solid #e9eeeb; font-size: 12px; }.account-details select { max-width: 100%; margin: 8px 0; }.account-details dd { font-size: 11px; }
 .model-status { padding: 20px; margin-top: 18px; }.risk-panel { margin-top: 18px; padding-top: 12px; border-top: 1px solid #e9eeeb; }
+.enrichment-summary { padding: 20px; margin-top: 18px; }
+.graph-canvas-wrap { position: relative; }.graph-context-legend { padding: 10px 16px; font-size: 11px; color: #637975; border-top: 1px solid #e9eeeb; margin: 0; }
+.intervention, .synthetic-context { padding: 20px; border-top: 1px solid #e9eeeb; font-size: 12px; }.intervention h3, .synthetic-context h3 { font-size: 14px; margin: 0 0 10px; }
+.context-card { padding: 12px; background: #fcf8f0; border-radius: 6px; margin-top: 12px; overflow-wrap: anywhere; }.context-card .muted { font-size: 11px; }
+.hold-controls { display: flex; flex-wrap: wrap; gap: 16px; margin: 14px 0; }.hold-controls label { flex: 1; min-width: 0; }.hold-controls select { display: block; width: 100%; margin: 8px 0 0; }
+.group-holds { border: 1px solid #dbe5e1; border-radius: 6px; max-height: 180px; overflow: auto; margin: 12px 0; padding: 10px; }.group-holds legend { font-size: 11px; color: #637975; }
+.group-holds label { display: flex; gap: 8px; align-items: baseline; padding: 5px; overflow-wrap: anywhere; }.group-holds .muted { font-size: 11px; }
+.compare-action, .preview-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }.preview-controls [aria-pressed="true"] { background: #eef6f2; border-color: #176d60; }
+.simulation-result { overflow-wrap: anywhere; }.simulation-result table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 14px 0; }
+.simulation-details { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }.simulation-details details { min-width: 0; padding: 10px; background: #f6f9f7; border-radius: 6px; }.simulation-details p { font-size: 11px; }
+@media (max-width: 540px) { .hold-controls, .simulation-details { display: grid; grid-template-columns: 1fr; }.group-holds label { flex-wrap: wrap; }.group-holds .muted { flex-basis: 100%; margin-left: 22px; } }
 .risk-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 12px; }
 .risk-metrics span { display: block; font-size: 11px; color: #637975; }.risk-metrics strong { display: block; font-size: 22px; margin-top: 7px; }
 .contributions, .evaluation { margin-top: 12px; overflow-x: auto; }.contributions table, .evaluation table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; }

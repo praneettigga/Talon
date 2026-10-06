@@ -12,7 +12,8 @@
     "test:python": "cd .. && python -m backend.python.run -m unittest discover -s backend/python/tests -v",
     "models:prepare": "cd .. && python -m backend.python.run -m backend.python.prepare_models",
     "models:train": "cd .. && python -m backend.python.run -m backend.python.train_models",
-    "models:replay": "cd .. && python -m backend.python.run -m backend.python.model_replay"
+    "models:replay": "cd .. && python -m backend.python.run -m backend.python.model_replay",
+    "enrichment:prepare": "cd .. && python -m backend.python.run -m backend.python.prepare_enrichment"
   },
   "dependencies": {
     "express": "^5.1.0",

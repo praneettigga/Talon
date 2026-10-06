@@ -4,6 +4,7 @@ import type { Control, ReplayEvent, Snapshot } from './api';
 import { Graph } from './Graph';
 import { Investigation } from './Investigation';
 import { Models, Risk } from './Risk';
+import { EnrichmentControls } from './Enrichment';
 import './style.css';
 
 const account = (bank: string, id: string) => `${bank} / ${id}`;
@@ -83,13 +84,14 @@ function App() {
         </div></section>
     </div>
     {snapshot && <Investigation intelligence={snapshot.intelligence} events={events}
-      selectedTransaction={selectedId} onSelectTransaction={setSelectedId} />}
+      selectedTransaction={selectedId} onSelectTransaction={setSelectedId} replayStatus={snapshot.status} />}
     <section className="panel detail-panel"><h2>Transaction details</h2>
       {selected ? <><Details event={selected} /><Risk risk={snapshot?.intelligence.decisions.find(d => d.transactionId === selected.id)?.risk} /></>
         : <p className="muted">Select a transaction from the feed or graph to see its source fields.</p>}
     </section>
     {snapshot && <Models models={snapshot.intelligence.models} />}
-    <footer>Curated demonstration subset. Scores and severity prioritise investigation; they do not establish fraud. Intervention simulation is a later milestone.</footer>
+    {snapshot && <EnrichmentControls context={snapshot.intelligence.enrichment} />}
+    <footer>Curated demonstration subset. Scores and severity prioritise investigation; they do not establish fraud. Holds are observed-graph simulations only.</footer>
   </main>;
 }
 

@@ -58,8 +58,9 @@ export interface IntelligenceSnapshot {
   status: 'ready' | 'unavailable'; error: string | null;
   enabledTypologies: string[]; ruleWindow: string; featureWindow: string;
   cases: InvestigationCase[]; entities: Record<string, AccountFeatures>;
-  decisions: { transactionId: string; timestamp: string; features: AccountFeatures[]; risk: DecisionRisk }[];
+  decisions: { transactionId: string; timestamp: string; features: AccountFeatures[]; risk: DecisionRisk; context: DecisionContext }[];
   entityRisks: Record<string, EntityRisk>; models: ModelStatus;
+  enrichment: EnrichmentSnapshot;
 }
 export interface DecisionRisk {
   status: 'scored' | 'historical warmup' | 'unavailable'; reason: string;
@@ -84,6 +85,36 @@ export interface EvaluationReport {
 export interface ModelStatus {
   status: 'ready' | 'unavailable'; error: string | null; version: string | null; graphModel: string;
   availableFrom: string | null; reviewThreshold: number | null; evaluation: EvaluationReport | null;
+}
+export interface DeviceContext {
+  accountId: string; deviceId: string; ipCluster: string; location: string; firstSeen: string;
+  scenario: 'individual context' | 'shared-network control' | 'shared-device demonstration';
+}
+export interface InfrastructureLink {
+  id: string; kind: 'device' | 'network'; value: string; accountIds: string[]; firstSeen: string;
+  observedAt: string; supportingFindingIds: string[]; supportsStructure: boolean; scenarios: string[]; facts: string[];
+}
+export interface EnrichmentSnapshot {
+  status: 'ready' | 'unavailable'; error: string | null; label: string; asOf: string | null;
+  usedInRiskModel: false; affectsSeverity: false; accounts: Record<string, DeviceContext>; links: InfrastructureLink[];
+}
+export interface DecisionContext {
+  status: 'ready' | 'unavailable'; label: string; asOf: string; accounts: DeviceContext[]; links: InfrastructureLink[];
+}
+export interface SimulationScenario {
+  name: 'initial' | 'comparison'; heldAccountIds: string[]; interruptedTransferIds: string[]; interruptedTransferCount: number;
+  remainingTransferIds: string[]; remainingTransferCount: number; noLongerReachableAccountIds: string[];
+  reachableAccountIds: string[]; directlyTouchedAccountIds: string[]; touchedCounterpartyIds: string[];
+  remainingRouteCount: number; remainingAlternateRouteCount: number; routesTruncated: boolean;
+  remainingRoutes: { destination: string; accountIds: string[]; transactionIds: string[]; alternateToInterruptedBaseline: boolean }[];
+}
+export interface SimulationResult {
+  status: 'ready'; caseId: string; snapshotCursor: number; observedAt: string; label: string;
+  sourceAccountIds: string[]; sourcePolicy: string;
+  baseline: { transferCount: number; accountCount: number; reachableAccountIds: string[] };
+  scenarios: SimulationScenario[];
+  comparison: { additionalInterruptedTransferIds: string[]; additionalUnreachableAccountIds: string[] } | null;
+  method: string;
 }
 
 export type Control =

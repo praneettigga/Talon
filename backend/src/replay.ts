@@ -1,10 +1,17 @@
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { artifactSchema, type Artifact, type Control, type Snapshot } from './contracts.js';
 import { unavailable, type IntelligenceWorker } from './worker.js';
 import type { IntelligenceSnapshot } from './contracts.js';
+import type { SimulationCommand } from './contracts.js';
 
 export async function loadArtifact(path: string): Promise<Artifact> {
-  return artifactSchema.parse(JSON.parse(await readFile(path, 'utf8')));
+  return (await loadReplayInput(path)).artifact;
+}
+export async function loadReplayInput(path: string) {
+  const bytes = await readFile(path);
+  return { artifact: artifactSchema.parse(JSON.parse(bytes.toString('utf8'))),
+    sha256: createHash('sha256').update(bytes).digest('hex') };
 }
 
 export class Replay {
@@ -113,6 +120,25 @@ export class Replay {
     try { this.intelligence = await this.worker!.reset(); }
     catch (error) { this.intelligence = unavailable((error as Error).message); }
     this.busy = false; this.resetting = false; this.publish(); return this.snapshot();
+  }
+  async simulate(command: SimulationCommand) {
+    const failed = (status: number, message: string) => Object.assign(new Error(message), { status });
+    const snapshot = this.snapshot();
+    if (this.resetting) throw failed(409, 'Reset in progress. Compare after reset completes.');
+    if (snapshot.intelligence.status !== 'ready' || !this.worker?.simulate) throw failed(503, 'Simulation worker unavailable');
+    if (command.expectedCursor !== undefined && command.expectedCursor !== snapshot.cursor) throw failed(409, 'Replay changed. Refresh the comparison.');
+    const investigation = snapshot.intelligence.cases.find(item => item.id === command.caseId || item.mergedCaseIds.includes(command.caseId));
+    if (!investigation) throw failed(404, 'Case not found in observed replay');
+    const members = new Set(investigation.entities.map(entity => entity.id));
+    if ([...command.heldAccountIds, ...(command.compareHeldAccountIds ?? []), ...(command.sourceAccountIds ?? [])].some(id => !members.has(id))) {
+      throw failed(400, 'Hold/source accounts must belong to the observed case');
+    }
+    const generation = this.generation;
+    const result = await this.worker.simulate({ ...command, case: investigation,
+      events: snapshot.events.filter(event => investigation.transactionIds.includes(event.id)),
+      observedAt: snapshot.eventTime!, snapshotCursor: snapshot.cursor });
+    if (generation !== this.generation) throw failed(409, 'Replay reset during comparison. Run the comparison again.');
+    return result;
   }
   dispose() { this.generation += 1; this.stopTimer(); this.worker?.close(); this.listeners.clear(); }
 }

@@ -1,9 +1,10 @@
 # Talon — Financial Fraud Intelligence
 
 Talon is being built to reconstruct explainable laundering cases from transaction networks.
-Milestones 1–4 provide validated data preparation, deterministic replay, event-time
-features, supported structural rules, evidence-backed cases, and learned risk scoring.
-Intervention simulation and case-reconstruction evaluation are later milestones.
+Milestones 1–5 provide validated data preparation, deterministic replay, event-time
+features, supported structural rules, evidence-backed cases, learned risk scoring,
+and observed-route intervention comparisons with labelled synthetic context.
+Case-reconstruction evaluation remains for milestone 6.
 
 ## Requirements and setup
 
@@ -155,6 +156,7 @@ Express listens on http://127.0.0.1:3001; Vite proxies `/v1` locally:
 | `GET /v1/entities/:id/risk` | Entity risk, latest transaction score, behaviour/GIN outputs, XGBoost contributions, prior-event features and evidence |
 | `GET /v1/events/:id/features` | Immutable feature and model decision snapshot for an already observed event |
 | `GET /v1/evaluation` | Frozen split, source provenance, model settings, calibration, thresholds and transaction metrics; 503 when models are unavailable |
+| `POST /v1/interventions/simulate` | Compare account holds against one frozen observed case graph; executes no hold |
 
 Invalid controls return 400; starting a completed replay returns 409 until reset. Missing
 or malformed replay data produces an explicit unavailable state and 503 on controls.
@@ -268,7 +270,8 @@ The split uses elapsed event time, keeping equal timestamps together:
    No fusion training row was used to fit its upstream component. The final upstream artifacts
    are refit on the first six days; validation/test labels never enter those fits. Inputs are
    anomaly availability/score, GIN score, seven rule strengths and prior flow features.
-   Account age and synthetic-enrichment inputs are omitted because neither exists yet.
+   Account age is unavailable. Synthetic enrichment is excluded from the frozen model inputs;
+   milestone 5 adds it as visible context only.
 4. **Calibration and threshold:** logistic/Platt scaling on September 7–8 only. September
    8–9 selects a review threshold targeting at most 1% false positives **with the transaction
    review gate**. Freeze the threshold (**79.2383 / 100**) and all artifacts before final testing.
@@ -315,6 +318,67 @@ labels, pattern attempts and replay provenance remain preparation/evaluation-onl
 never loaded by runtime inference. Model commands are also available from `backend/`:
 `npm run models:prepare`, `npm run models:train`, `npm run models:replay`.
 
+## Milestone 5 intervention comparison and synthetic context
+
+Pause or complete replay, select a case, and use **Compare observed-route disruption**.
+Choose a single account and additional accounts for the group hold, then click **Compare
+holds**. An optional source selection lets you inspect reachability from a particular account.
+The results compare interrupted transfer links, downstream accounts no longer reachable,
+remaining alternate route witnesses, and directly touched accounts/counterparties. Preview
+either scenario on the case graph: held accounts and interrupted links appear in red.
+Advancing replay invalidates the preview; compare again at the new prefix.
+
+Every comparison is labelled **“Observed-route disruption; assumes similar routes recur.”**
+It removes outgoing observed transfer links from held accounts in a copy of the case graph.
+It executes no hold and estimates no monetary loss prevented. Reachability is directed and
+static: it does not enforce transfer-time ordering. Automatic sources are accounts with
+outgoing links and no incoming links; a source-free cycle uses the earliest transfer's sender.
+Starting sources are excluded from downstream counts. Parallel transfers keep their separate
+IDs. One shortest route witness per reachable destination is counted, with at most 50 displayed;
+these are not counts of every possible path. An alternate witness means the baseline witness
+was interrupted but another route still reaches its destination. Directly touched accounts are
+held accounts plus endpoints of interrupted transfers; touched counterparties are those with
+an observed counterparty role (an account can also have another role).
+Synthetic infrastructure links never enter the simulator's transfer graph.
+
+Example request:
+
+```json
+{"caseId":"<observed-case-id>","heldAccountIds":["<bank/account>"],"compareHeldAccountIds":["<bank/account>","<second-bank/account>"],"expectedCursor":183}
+```
+
+Group holds must include the single hold. `sourceAccountIds` is optional. All selected accounts
+must belong to the observed case. The endpoint resolves merged case aliases and freezes the
+supporting transfers at request time. Invalid selections return 400, unknown cases 404, stale
+cursors or reset during simulation 409, and unavailable simulation workers 503. Comparison
+does not change replay, decisions, model risk, case severity, or evidence.
+
+`models:replay` now also generates deterministic synthetic device/network/location context.
+For an existing replay, regenerate only that context with:
+
+```bash
+npm run enrichment:prepare
+# Restart the API to load the regenerated files.
+```
+
+The gitignored `data/replay/enrichment.csv` has columns
+`account_id,device_id,ip_cluster,location,first_seen,scenario`. Its sidecar binds it to the
+replay hash, validated source hash, CSV checksum, schema and account coverage. The current
+183-event replay produces 290 assignments for 288 accounts. Each account initially has its
+own device/network. Two early accounts share a network but distinct devices as a synthetic
+legitimate-sharing control; this is not an IBM ground-truth classification. Once an observed
+structural finding supports a pair of other accounts, an additional shared-device/network
+assignment becomes visible from that observation time. Generation reads runtime transfers
+and reconstructed findings, never source labels or pattern provenance. Future assignments
+and unobserved accounts remain hidden, and each transaction's context snapshot is immutable.
+
+The UI labels all context **“Synthetic Talon enrichment; not supplied by IBM AMLWorld”**.
+Shared IP alone does not support structure. Shared devices can link to observed structural
+findings as additional context, but neither changes frozen risk, severity, nor case correlation.
+The milestone 4 metrics do not evaluate these synthetic signals. Missing, stale or corrupt
+enrichment produces an explicit unavailable context state while structural intelligence and
+models remain usable. `TALON_ENRICHMENT_FILE` selects an alternate CSV.
+
 ```bash
 npm test
 npm run check
@@ -333,8 +397,9 @@ CHROMIUM_PATH=/usr/bin/chromium npm run test:ui
 Set `TALON_UI_URL` if Vite uses a different port. Screenshots go to gitignored
 `frontend/test-results/`. The browser test resets the shared local replay and checks controls,
 pause/reload, full completion, identical reset events/features/cases, case evidence,
-investigation graphs, account selection, model contributions, frozen evaluation, and mobile layout.
-For milestone 4 browser acceptance, prepare model artifacts and the later replay first.
+investigation graphs, account selection, model contributions, frozen evaluation, synthetic
+context, single/group simulations, unchanged intelligence after simulation, and mobile layout.
+For milestone 5 browser acceptance, prepare model artifacts and the later replay first.
 
 Tests create temporary, explicitly artificial records to verify validation and downloader
 failure handling. They are not demonstration data or benchmark results. The real milestone
@@ -354,5 +419,6 @@ Data is the **IBM AMLWorld HI-Small synthetic AML benchmark**, not real bank rec
 [official Kaggle distribution](https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml)
 and identifies the data license as [CDLA-Sharing-1.0](https://spdx.org/licenses/CDLA-Sharing-1.0.html).
 Downloads use the [Kaggle CLI](https://github.com/Kaggle/kaggle-api).
-No synthetic device enrichment is present yet. Structural findings require model corroboration
-and threshold support before review escalation. Intervention simulation remains for milestone 5.
+Synthetic Talon device/network context is separate from the IBM benchmark and does not enter
+the frozen risk model. Structural findings require model corroboration and threshold support
+before review escalation. Simulations describe observed-route disruption only.

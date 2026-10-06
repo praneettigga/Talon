@@ -15,6 +15,8 @@ def main():
     provenance['purpose'] = 'Curated later demonstration, not model evaluation. Score only at/after frozen calibration cutoff.'
     write_manifest(provenance, ROOT / 'data/replay/provenance.json')
     write_manifest(payload, ROOT / 'data/replay/replay.json')
+    from .prepare_enrichment import prepare
+    prepare(ROOT / 'data/replay/replay.json', ROOT / 'data/replay/talon_device_context.csv')
     scored = sum(e['timestamp'] >= metadata['availableFrom'] for e in payload['events'])
     print(f'Prepared {len(payload["events"])} later demo events; {scored} at/after scoring cutoff {metadata["availableFrom"]}. Restart the API.')
 

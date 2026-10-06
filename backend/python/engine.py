@@ -24,7 +24,7 @@ def endpoints(event):
 
 
 class Engine:
-    def __init__(self, enabled, models=None, model_error=None):
+    def __init__(self, enabled, models=None, model_error=None, enrichment=None, enrichment_error=None):
         self.enabled = sorted(SUPPORTED.intersection(enabled))
         self.events = []
         self.account_events = defaultdict(list)
@@ -35,6 +35,11 @@ class Engine:
         self.entity_risks = {}
         self.account_risk_history = defaultdict(list)
         self.models = models
+        self.enrichment = enrichment
+        from .enrichment import unavailable
+        self.enrichment_state = unavailable(enrichment_error or 'Synthetic context not prepared. Run npm run enrichment:prepare.')
+        if enrichment:
+            self.enrichment_state = enrichment.snapshot([], {})
         self.model_status = models.status if models else {
             'status': 'unavailable', 'error': model_error or 'Models not prepared. Run models:prepare and models:train.',
             'version': None, 'graphModel': 'IBM Multi-GNN GIN', 'availableFrom': None,
@@ -146,6 +151,12 @@ class Engine:
             candidate['firstSeen'] = previous['firstSeen'] if previous else event['timestamp']
             self.findings[key] = candidate
             self.correlate(candidate, event['timestamp'])
+        if self.enrichment:
+            self.enrichment_state = self.enrichment.snapshot(self.events, self.findings)
+        decision['context'] = {'status': self.enrichment_state['status'], 'label': self.enrichment_state['label'],
+            'asOf': event['timestamp'],
+            'accounts': [self.enrichment_state['accounts'][a] for a in sorted({sender, receiver}) if a in self.enrichment_state['accounts']],
+            'links': [link for link in self.enrichment_state['links'] if {sender, receiver} & set(link['accountIds'])]}
         for case in self.cases:
             prior_severity = case['severity']
             prior_risk = case['severityInputs']['highestEntityRisk']
@@ -351,4 +362,4 @@ class Engine:
                          'ruleWindow': '7 days', 'featureWindow': '1 hour',
                          'cases': sorted(self.cases, key=lambda c: (-{'LOW': 0, 'MEDIUM': 1, 'HIGH': 2, 'CRITICAL': 3}[c['severity']], -len(c['findingIds']), c['id'])),
                          'entities': self.entities, 'decisions': self.decisions,
-                         'entityRisks': self.entity_risks, 'models': self.model_status})
+                         'entityRisks': self.entity_risks, 'models': self.model_status, 'enrichment': self.enrichment_state})

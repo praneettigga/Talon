@@ -30,6 +30,8 @@ test('real dataset replays, pauses, reconnects, completes, and resets identicall
   expect(completed.intelligence.decisions).toHaveLength(completed.total);
   expect(completed.intelligence.cases.length).toBeGreaterThan(0);
   expect(completed.intelligence.models.status).toBe('ready');
+  expect(completed.intelligence.enrichment.status).toBe('ready');
+  expect(completed.intelligence.enrichment.usedInRiskModel).toBe(false);
   expect(completed.intelligence.decisions.some((item: { risk: { status: string } }) => item.risk.status === 'scored')).toBe(true);
   expect(completed.intelligence.cases.every((item: { entities: { suspect: boolean }[] }) => item.entities.every(e => !e.suspect))).toBe(true);
   await page.locator('.case-item').first().click();
@@ -57,6 +59,35 @@ test('real dataset replays, pauses, reconnects, completes, and resets identicall
   await evidenceTransaction.click();
   await expect(page.locator('.detail-panel')).toContainText(evidenceTransactionId!);
   await expect(page.locator('.detail-panel .risk-panel')).toContainText('scored');
+  const syntheticLabel = 'Synthetic Talon enrichment; not supplied by IBM AMLWorld';
+  await expect(page.locator('.synthetic-context')).toContainText(syntheticLabel);
+  await expect(page.locator('.enrichment-summary')).toContainText(syntheticLabel);
+  await page.locator('.enrichment-summary summary').click();
+  await expect(page.locator('.enrichment-summary')).toContainText('talon-network-control');
+  const demonstratedCase = completed.intelligence.cases.find((item: { entities: { id: string }[] }) =>
+    completed.intelligence.enrichment.links.some((link: { kind: string; accountIds: string[] }) =>
+      link.kind === 'device' && link.accountIds.filter(id => item.entities.some(e => e.id === id)).length >= 2));
+  expect(demonstratedCase).toBeTruthy();
+  await page.locator('.case-item').filter({ hasText: demonstratedCase.id }).click();
+  await expect(page.locator('.synthetic-context')).toContainText('talon-device-demonstration');
+  await expect(page.locator('.case-detail .graph-context-legend').first()).toContainText(syntheticLabel);
+  const selectedHold = await page.getByLabel('Single-account hold').inputValue();
+  expect(selectedHold).toBeTruthy();
+  await expect(page.getByRole('button', { name: 'Compare holds', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Compare holds', exact: true }).click();
+  await expect(page.getByLabel('Hold comparison result')).toBeVisible();
+  await expect(page.getByLabel('Hold comparison result')).toContainText('Observed-route disruption; assumes similar routes recur.');
+  const simulationPayload = { caseId: demonstratedCase.id, heldAccountIds: [selectedHold],
+    compareHeldAccountIds: await page.locator('.group-holds input:checked').evaluateAll(inputs => inputs.map(input => input.getAttribute('aria-label')!.replace('Include ', '').replace(' in group hold', ''))),
+    expectedCursor: completed.cursor };
+  const simulated = await (await request.post('/v1/interventions/simulate', { data: simulationPayload })).json();
+  expect(simulated.scenarios).toHaveLength(2);
+  expect(simulated.scenarios[1].interruptedTransferCount).toBeGreaterThanOrEqual(simulated.scenarios[0].interruptedTransferCount);
+  await expect(page.locator('.case-detail .graph')).toHaveAttribute('data-interrupted-transfers', String(simulated.scenarios[0].interruptedTransferCount));
+  await page.getByRole('button', { name: 'Preview group hold', exact: true }).click();
+  await expect(page.locator('.case-detail .graph')).toHaveAttribute('data-interrupted-transfers', String(simulated.scenarios[1].interruptedTransferCount));
+  expect((await (await request.get('/v1/events')).json()).intelligence).toEqual(completed.intelligence);
+  await page.screenshot({ path: 'test-results/intervention-desktop.png', fullPage: true });
   await page.screenshot({ path: 'test-results/investigation-desktop.png', fullPage: true });
   expect(completed.events[0]).not.toHaveProperty('label');
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
@@ -64,12 +95,19 @@ test('real dataset replays, pauses, reconnects, completes, and resets identicall
   await expect(page.getByLabel('Replay speed')).toHaveValue('1');
   await expect(page.locator('.workspace .graph')).toHaveAttribute('aria-label', 'Transaction graph showing 0 transfers');
   await expect(page.locator('.case-item')).toHaveCount(0);
+  await expect(page.getByLabel('Hold comparison result')).toHaveCount(0);
+  expect((await (await request.get('/v1/events')).json()).intelligence.enrichment.accounts).toEqual({});
   await page.getByLabel('Replay speed').selectOption('20');
   await page.getByRole('button', { name: 'Start replay', exact: true }).click();
   await expect(page.locator('.play-state')).toHaveText('completed', { timeout: 25000 });
   const repeated = await (await request.get('/v1/events')).json();
   expect(repeated.events).toEqual(completed.events);
   expect(repeated.intelligence).toEqual(completed.intelligence);
+  const simulatedAgain = await (await request.post('/v1/interventions/simulate', { data: simulationPayload })).json();
+  expect(simulatedAgain).toEqual(simulated);
+  await page.locator('.case-item').filter({ hasText: demonstratedCase.id }).click();
+  await page.getByRole('button', { name: 'Compare holds', exact: true }).click();
+  await expect(page.getByLabel('Hold comparison result')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/replay-mobile.png', fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

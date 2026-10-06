@@ -2,11 +2,12 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
-import type { IntelligenceSnapshot, ReplayEvent } from './contracts.js';
+import type { FrozenSimulation, IntelligenceSnapshot, ReplayEvent, SimulationResult } from './contracts.js';
 
 export interface IntelligenceWorker {
   event(event: ReplayEvent): Promise<IntelligenceSnapshot>;
   reset(): Promise<IntelligenceSnapshot>;
+  simulate?(snapshot: FrozenSimulation): Promise<SimulationResult>;
   close(): void;
 }
 
@@ -15,14 +16,16 @@ export const unavailable = (error: string): IntelligenceSnapshot => ({
   ruleWindow: '7 days', featureWindow: '1 hour',
   entityRisks: {}, models: { status: 'unavailable', error, version: null, graphModel: 'IBM Multi-GNN GIN',
     availableFrom: null, reviewThreshold: null, evaluation: null },
+  enrichment: { status: 'unavailable', error, label: 'Synthetic Talon enrichment; not supplied by IBM AMLWorld',
+    asOf: null, usedInRiskModel: false, affectsSeverity: false, accounts: {}, links: [] },
 });
 
 export class PythonWorker implements IntelligenceWorker {
   private process: ChildProcessWithoutNullStreams;
   private nextId = 0;
   private dead = false;
-  private pending = new Map<number, { resolve: (data: IntelligenceSnapshot) => void;
-    reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+  private pending = new Map<number, { resolve: (data: unknown) => void;
+    reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>; simulation: boolean }>();
   constructor() {
     const localPython = fileURLToPath(new URL('../../.venv/bin/python', import.meta.url));
     this.process = spawn(process.env.TALON_PYTHON ?? (existsSync(localPython) ? localPython : 'python'), ['-u', '-m', 'backend.python.worker'], {
@@ -37,8 +40,11 @@ export class PythonWorker implements IntelligenceWorker {
         clearTimeout(pending.timer); this.pending.delete(reply.id);
         if (reply.error) { pending.reject(new Error(reply.error)); return; }
         const result = reply.result;
-        if (result?.status !== 'ready' || !result.models || !result.entityRisks || !Array.isArray(result.cases) || !Array.isArray(result.decisions) ||
-            !Array.isArray(result.enabledTypologies) || !result.entities) {
+        const valid = pending.simulation
+          ? result?.status === 'ready' && typeof result.caseId === 'string' && Number.isInteger(result.snapshotCursor) && Array.isArray(result.scenarios)
+          : result?.status === 'ready' && result.models && result.entityRisks && result.enrichment && Array.isArray(result.cases) && Array.isArray(result.decisions) &&
+            Array.isArray(result.enabledTypologies) && result.entities;
+        if (!valid) {
           pending.reject(new Error('Invalid intelligence worker response')); return;
         }
         pending.resolve(result);
@@ -54,23 +60,26 @@ export class PythonWorker implements IntelligenceWorker {
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(error); }
     this.pending.clear();
   }
-  private request(command: Record<string, unknown>): Promise<IntelligenceSnapshot> {
+  private request<T = IntelligenceSnapshot>(command: Record<string, unknown>): Promise<T> {
     if (this.dead) return Promise.reject(new Error('Intelligence worker unavailable'));
     const id = ++this.nextId;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.fail(new Error('Intelligence worker timed out')); this.process.kill();
       }, 10000);
-      this.pending.set(id, { resolve, reject, timer });
+      this.pending.set(id, { resolve: value => resolve(value as T), reject, timer, simulation: command.command === 'simulate' });
       this.process.stdin.write(JSON.stringify({ id, ...command }) + '\n');
     });
   }
-  initialize(sourceSha256: string, modelsDirectory?: string) {
+  initialize(sourceSha256: string, modelsDirectory?: string, context: { replaySha256?: string; enrichmentPath?: string } = {}) {
     return this.request({ command: 'init', sourceSha256,
       modelsDirectory: modelsDirectory ?? process.env.TALON_MODELS_DIR ?? fileURLToPath(new URL('../../data/models/current', import.meta.url)),
+      replaySha256: context.replaySha256,
+      enrichmentPath: context.enrichmentPath ?? process.env.TALON_ENRICHMENT_FILE ?? fileURLToPath(new URL('../../data/replay/talon_device_context.csv', import.meta.url)),
       manifest: fileURLToPath(new URL('../../docs/data/hi-small-manifest.json', import.meta.url)) });
   }
   event(event: ReplayEvent) { return this.request({ command: 'event', event }); }
   reset() { return this.request({ command: 'reset' }); }
+  simulate(snapshot: FrozenSimulation) { return this.request<SimulationResult>({ command: 'simulate', snapshot }); }
   close() { this.fail(new Error('Worker stopped')); this.process.kill(); }
 }
