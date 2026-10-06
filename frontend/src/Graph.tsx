@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import cytoscape, { type Core } from 'cytoscape';
-import type { ReplayEvent } from '../../backend/src/contracts';
+import type { ReplayEvent } from './api';
 
 export function Graph({ events, selectedId, onSelect }: {
   events: ReplayEvent[]; selectedId: string | null; onSelect: (id: string) => void;

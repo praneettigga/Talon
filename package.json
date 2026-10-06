@@ -11,14 +11,13 @@
     "build": "npm run build --workspaces",
     "check": "npm run check --workspaces",
     "test": "python -m unittest discover -s pipeline/tests -v && npm run test -w backend",
-    "test:ui": "playwright test",
+    "test:ui": "npm run test:ui -w frontend",
     "data:replay": "python -m pipeline.replay",
     "data:download": "python -m pipeline download",
     "data:profile": "python -m pipeline profile",
     "data:setup": "python -m pipeline setup"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
     "concurrently": "^9.2.1",
     "typescript": "^5.9.3"
   },

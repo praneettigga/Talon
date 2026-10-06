@@ -81,7 +81,18 @@ npm run data:replay
 npm run dev
 ```
 
-Open the Vite URL printed in the terminal (normally http://127.0.0.1:5173). Press **Start
+`npm run dev` from the repository root is an optional full-stack shortcut: it starts both
+the API and the UI. Each application can also be run from its own directory:
+
+```bash
+# Terminal 1
+cd backend && npm run dev
+
+# Terminal 2
+cd frontend && npm run dev
+```
+
+Open the Vite URL printed by the frontend (normally http://127.0.0.1:5173). Press **Start
 replay**, select 1, 5, or 20 events per second, and click a feed entry or graph arrow to
 inspect its original fields. Pause freezes the stream. Reset clears emitted events and
 returns speed to 1; replaying produces the same event sequence. Event-time gaps are
@@ -133,13 +144,13 @@ Browser acceptance tests use the real generated replay against a running app:
 
 ```bash
 npx playwright install chromium
-npm run test:ui
+cd frontend && npm run test:ui
 # Or use a locally installed Chromium:
 CHROMIUM_PATH=/usr/bin/chromium npm run test:ui
 ```
 
 Set `TALON_UI_URL` if Vite uses a different port. Screenshots go to gitignored
-`data/test-results/`. The browser test resets the shared local replay and checks controls,
+`frontend/test-results/`. The browser test resets the shared local replay and checks controls,
 pause/reload, full completion, identical reset playback, graph rendering, and mobile layout.
 
 Tests create temporary, explicitly artificial records to verify validation and downloader

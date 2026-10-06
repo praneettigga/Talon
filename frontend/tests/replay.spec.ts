@@ -18,7 +18,7 @@ test('real dataset replays, pauses, reconnects, completes, and resets identicall
   await expect(page.locator('.graph canvas').first()).toBeVisible();
   await page.getByLabel('All observed events').check();
   await expect(page.locator('.graph')).toHaveAttribute('aria-label', `Transaction graph showing ${paused.cursor} transfers`);
-  await page.screenshot({ path: 'data/test-results/replay-desktop.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/replay-desktop.png', fullPage: true });
   await page.reload();
   await expect(page.locator('.progress-label')).toHaveText(`${paused.cursor} / ${paused.total} events`);
   expect((await (await request.get('/v1/events')).json()).cursor).toBe(paused.cursor);
@@ -36,7 +36,7 @@ test('real dataset replays, pauses, reconnects, completes, and resets identicall
   await expect(page.locator('.play-state')).toHaveText('completed', { timeout: 25000 });
   expect((await (await request.get('/v1/events')).json()).events).toEqual(completed.events);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: 'data/test-results/replay-mobile.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/replay-mobile.png', fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(errors).toEqual([]);
   await request.post('/v1/replay/control', { data: { action: 'reset' } });
