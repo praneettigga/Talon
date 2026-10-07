@@ -119,12 +119,12 @@ def gin_scores(model, encoder, records):
     return scores
 
 
-def fit_gin(records, labels, epochs=8):
+def fit_gin(records, labels, epochs=8, fit_snapshot_cap=2048):
     torch.manual_seed(42)
     encoder = GraphEncoder().fit(records)
     model = GINe(**GIN_CONFIG, edge_dim=encoder.edge_dim)
     # Fixed hash subsample bounds CPU fitting, without consulting validation/test.
-    ranked = sorted(range(len(records)), key=lambda i: hashlib.sha256(records[i]['event']['id'].encode()).hexdigest())[:2048]
+    ranked = sorted(range(len(records)), key=lambda i: hashlib.sha256(records[i]['event']['id'].encode()).hexdigest())[:fit_snapshot_cap]
     graphs = [encoder.encode(records[i]) for i in ranked]
     ys = torch.tensor([labels[i] for i in ranked], dtype=torch.long)
     if len(set(ys.tolist())) != 2:

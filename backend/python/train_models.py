@@ -48,6 +48,21 @@ def choose_threshold(labels, scores, eligible, target=.01):
     raise ValueError('Threshold window needs benign examples')
 
 
+def choose_f1_threshold(labels, scores):
+    """Select an operating point only from the validation threshold window."""
+    options = sorted(set(float(score) for score in scores))
+    candidates = []
+    for threshold in options:
+        measured = metrics(labels, scores, threshold)
+        precision, recall = measured['precision'], measured['recall']
+        if precision is not None and recall is not None:
+            candidates.append((2 * precision * recall / (precision + recall), precision, threshold))
+    if not candidates:
+        raise ValueError('Threshold window needs a positive prediction')
+    # Favour precision if F1 ties, then a higher threshold for stability.
+    return max(candidates)[2]
+
+
 def corroboration(record, sides, graph):
     return any(record['rules'].values()) and (graph >= .8 or any(s is not None and s >= .99 for s in sides))
 
@@ -67,14 +82,13 @@ def export_ibm(records, labels, path):
                              e['amountReceived'], currencies.index(e['receivingCurrency']), formats.index(e['paymentFormat']), label])
 
 
-def train(dataset_dir, output_dir, report_path, epochs=8):
+def train(dataset_dir, output_dir, report_path, epochs=8, fit_snapshot_cap=2048, threshold_strategy='fpr'):
     source = json.loads((dataset_dir / 'events.json').read_text())
     labels_by_id = json.loads((dataset_dir / 'labels.json').read_text())
     events, dataset = source['events'], source['metadata']
-    manifest = json.loads((ROOT / 'docs/data/hi-small-manifest.json').read_text())
-    if dataset['sourceSha256'] != manifest['files']['HI-Small_Trans.csv']['sha256']:
-        raise ValueError('Dataset source checksum mismatch')
-    enabled = sorted(manifest['enabled_typologies'])
+    enabled = sorted(dataset['enabledTypologies'])
+    if not enabled:
+        raise ValueError('Dataset must declare at least one enabled typology')
     labels = np.array([labels_by_id[e['id']] for e in events])
     if set(labels.tolist()) != {0, 1}:
         raise ValueError('Model dataset needs both classes')
@@ -93,7 +107,7 @@ def train(dataset_dir, output_dir, report_path, epochs=8):
         fitting = [records[i] for i in fit_ids]
         print(f'Forward fold: {len(fit_ids)} upstream-fit → {len(score_ids)} unseen outputs', flush=True)
         behaviour = Behaviour().fit(fitting, labels[fit_ids])
-        gin, encoder = fit_gin(fitting, labels[fit_ids], epochs)
+        gin, encoder = fit_gin(fitting, labels[fit_ids], epochs, fit_snapshot_cap)
         vectors, _, _ = upstream(behaviour, gin, encoder, [records[i] for i in score_ids])
         oof_x.extend(vectors); oof_y.extend(labels[score_ids])
         folds.append({'upstreamFitRows': len(fit_ids), 'fusionRows': len(score_ids),
@@ -113,7 +127,7 @@ def train(dataset_dir, output_dir, report_path, epochs=8):
     print(f'Fitting final upstream artifacts on {len(train_ids)} training events', flush=True)
     fitting = [records[i] for i in train_ids]
     behaviour = Behaviour().fit(fitting, labels[train_ids])
-    gin, encoder = fit_gin(fitting, labels[train_ids], epochs)
+    gin, encoder = fit_gin(fitting, labels[train_ids], epochs, fit_snapshot_cap)
     val_x, val_sides, val_gin = upstream(behaviour, gin, encoder, [records[i] for i in val_ids])
     val_margin = fusion.predict(xgb.DMatrix(val_x, feature_names=FUSION_NAMES), output_margin=True)
     middle = (datetime.fromisoformat(train_end) + (datetime.fromisoformat(val_end) - datetime.fromisoformat(train_end)) / 2).isoformat()
@@ -124,8 +138,16 @@ def train(dataset_dir, output_dir, report_path, epochs=8):
     calibration = LogisticRegression(C=1, random_state=42).fit(val_margin[cal].reshape(-1, 1), labels[np.array(val_ids)[cal]])
     val_scores = calibration.predict_proba(val_margin.reshape(-1, 1))[:, 1] * 100
     val_eligible = [corroboration(records[i], sides, score) for i, sides, score in zip(val_ids, val_sides, val_gin)]
-    threshold = choose_threshold(labels[np.array(val_ids)[threshold_ids]], val_scores[threshold_ids],
-                                 [val_eligible[j] for j in threshold_ids])
+    selection_labels, selection_scores = labels[np.array(val_ids)[threshold_ids]], val_scores[threshold_ids]
+    selection_eligible = [val_eligible[j] for j in threshold_ids]
+    if threshold_strategy == 'fpr':
+        threshold = choose_threshold(selection_labels, selection_scores, selection_eligible)
+        selection_metrics = metrics(selection_labels, selection_scores, threshold, selection_eligible)
+        selection_note = 'Lowest eligible threshold with validation review-gate FPR at or below target.'
+    else:
+        threshold = choose_f1_threshold(selection_labels, selection_scores)
+        selection_metrics = metrics(selection_labels, selection_scores, threshold)
+        selection_note = 'Maximum F1 threshold from the validation threshold window; no test labels used.'
     print(f'Frozen review threshold {threshold:.4f}; evaluating untouched final test window', flush=True)
     test_x, test_sides, test_gin = upstream(behaviour, gin, encoder, [records[i] for i in test_ids])
     test_margin = fusion.predict(xgb.DMatrix(test_x, feature_names=FUSION_NAMES), output_margin=True)
@@ -141,12 +163,12 @@ def train(dataset_dir, output_dir, report_path, epochs=8):
                         'test': {'rows': len(test_ids), 'positives': int(labels[test_ids].sum()), 'endExclusive': dataset['split']['end']}},
               'forwardFolds': folds, 'gin': {'implementation': 'IBM Multi-GNN GINe',
                 'commit': '252b0252afca109d1d216c411c59ff70753b25fc', 'epochs': epochs,
-                'layers': 2, 'hidden': 16, 'fitSnapshotCap': 2048, 'snapshotEdgeCap': 128, 'hops': 2},
+                'layers': 2, 'hidden': 16, 'fitSnapshotCap': fit_snapshot_cap, 'snapshotEdgeCap': 128, 'hops': 2},
               'calibration': {'method': 'Platt logistic scaling on first validation half', 'endExclusive': middle,
                               'slope': float(calibration.coef_[0, 0]), 'intercept': float(calibration.intercept_[0])},
-              'thresholdSelection': {'windowStart': middle, 'windowEndExclusive': val_end, 'targetFalsePositiveRate': .01,
-                  'reviewThreshold': threshold, 'metrics': metrics(labels[np.array(val_ids)[threshold_ids]], val_scores[threshold_ids],
-                      threshold, [val_eligible[j] for j in threshold_ids])},
+              'thresholdSelection': {'windowStart': middle, 'windowEndExclusive': val_end,
+                  'strategy': threshold_strategy, 'targetFalsePositiveRate': .01, 'note': selection_note,
+                  'reviewThreshold': threshold, 'metrics': selection_metrics},
               'test': evaluated, 'testReviewGate': reviewed,
               'behaviourCurrencies': {c: len(reference) for c, (_, reference) in behaviour.models.items()},
               'limitations': ['Bounded case-enriched synthetic subset, not full-benchmark estimates.',
@@ -192,8 +214,11 @@ def main():
     parser.add_argument('--output-dir', type=Path, default=ROOT / 'data/models/current')
     parser.add_argument('--report', type=Path, default=ROOT / 'docs/data/milestone4-evaluation.json')
     parser.add_argument('--epochs', type=int, default=8)
+    parser.add_argument('--fit-snapshot-cap', type=int, default=2048)
+    parser.add_argument('--threshold-strategy', choices=('fpr', 'f1'), default='fpr')
     args = parser.parse_args()
-    train(args.dataset_dir, args.output_dir, args.report, args.epochs)
+    train(args.dataset_dir, args.output_dir, args.report, args.epochs, args.fit_snapshot_cap,
+          args.threshold_strategy)
 
 
 if __name__ == '__main__':
