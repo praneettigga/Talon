@@ -30,6 +30,8 @@ class Engine:
         self.account_events = defaultdict(list)
         self.decisions = []
         self.findings = {}
+        self._finding_sets = {}
+        self._connection_keys = {}
         self.cases = []
         self.entities = {}
         self.entity_risks = {}
@@ -90,7 +92,7 @@ class Engine:
             'accountAge': None,
         }
 
-    def process(self, event):
+    def process(self, event, *, emit_snapshot=True):
         if self.events and (event['timestamp'], event['sourceRow']) <= (self.events[-1]['timestamp'], self.events[-1]['sourceRow']):
             raise ValueError('Events must arrive in strict timestamp/source-row order')
         if any(e['id'] == event['id'] for e in self.events):
@@ -133,24 +135,7 @@ class Engine:
             item['riskScore'] = round(highest, 4) if highest is not None else None
             item['riskSourceTransactionId'] = source
             item['riskAsOf'] = event['timestamp']
-        active = [e for e in self.events if stamp(e) >= now - GRAPH_WINDOW and endpoints(e)[0] != endpoints(e)[1]]
-        for candidate in self.detect(active, event):
-            if candidate['typology'] not in self.enabled:
-                continue
-            key = candidate['id']
-            previous = self.findings.get(key)
-            if previous and not set(previous['transactionIds']).issubset(candidate['transactionIds']):
-                if set(candidate['transactionIds']).issubset(previous['transactionIds']):
-                    continue  # Expiry alone is not new evidence.
-                # Keep the older matched window intact when a fresh window grows.
-                candidate['id'] += '-' + hashlib.sha256(candidate['transactionIds'][0].encode()).hexdigest()[:8]
-                key = candidate['id']
-                previous = self.findings.get(key)
-            if previous and previous['transactionIds'] == candidate['transactionIds']:
-                continue
-            candidate['firstSeen'] = previous['firstSeen'] if previous else event['timestamp']
-            self.findings[key] = candidate
-            self.correlate(candidate, event['timestamp'])
+        self.observe_structures(event)
         if self.enrichment:
             self.enrichment_state = self.enrichment.snapshot(self.events, self.findings)
         decision['context'] = {'status': self.enrichment_state['status'], 'label': self.enrichment_state['label'],
@@ -168,7 +153,33 @@ class Engine:
                     'severity': case['severity'], 'linkedTransactions': len(case['transactionIds']),
                     'highestEntityRisk': case['severityInputs']['highestEntityRisk'],
                     'facts': [case['severityReason']]})
-        return self.snapshot()
+        # Offline replay needs the identical state transitions without copying the
+        # entire accumulated history after every event.
+        return self.snapshot() if emit_snapshot else None
+
+    def observe_structures(self, event):
+        """Shared live/offline finding growth and case correlation, without labels."""
+        now = stamp(event)
+        active = [e for e in self.events if stamp(e) >= now - GRAPH_WINDOW and endpoints(e)[0] != endpoints(e)[1]]
+        for candidate in self.detect(active, event):
+            if event['id'] not in candidate['transactionIds']:
+                continue  # Unrelated arrivals/expiry cannot establish new evidence.
+            if candidate['typology'] not in self.enabled:
+                continue
+            key = candidate['id']
+            previous = self.findings.get(key)
+            if previous and not set(previous['transactionIds']).issubset(candidate['transactionIds']):
+                if set(candidate['transactionIds']).issubset(previous['transactionIds']):
+                    continue  # Expiry alone is not new evidence.
+                candidate['id'] += '-' + hashlib.sha256(candidate['transactionIds'][0].encode()).hexdigest()[:8]
+                key = candidate['id']
+                previous = self.findings.get(key)
+            if previous and previous['transactionIds'] == candidate['transactionIds']:
+                continue
+            candidate['firstSeen'] = previous['firstSeen'] if previous else event['timestamp']
+            self.findings[key] = candidate
+            self._finding_sets[key] = (frozenset(candidate['transactionIds']), frozenset(candidate['anchors']))
+            self.correlate(candidate, event['timestamp'])
 
     def finding(self, typology, anchors, edges, roles, facts, strength):
         unique = {e['id']: e for e in edges}
@@ -183,7 +194,7 @@ class Engine:
                 'observedAt': self.events[-1]['timestamp'], 'facts': facts,
                 'corroborated': False}
 
-    def detect(self, edges, current):
+    def detect(self, edges, current, *, incremental=False):
         results = []
         incoming, outgoing = defaultdict(list), defaultdict(list)
         for edge in edges:
@@ -192,7 +203,9 @@ class Engine:
             incoming[target].append(edge)
         def order(edge):
             return edge['timestamp'], edge['sourceRow']
-        for hub in sorted(set(incoming) | set(outgoing)):
+        current_source, current_target = endpoints(current)
+        hubs = {current_source, current_target} if incremental else set(incoming) | set(outgoing)
+        for hub in sorted(hubs):
             ins, outs = incoming[hub], outgoing[hub]
             sources = {endpoints(e)[0] for e in ins}
             targets = {endpoints(e)[1] for e in outs}
@@ -212,11 +225,13 @@ class Engine:
                         {hub: 'intermediary'}, [f'{hub} collected from multiple sources before dispersing to multiple destinations.'], .7))
         if 'SCATTER-GATHER' in self.enabled:
             routes = defaultdict(list)
+            affected_routes = {(endpoints(i)[0], current_target) for i in incoming[current_source]
+                               if order(i) < order(current)} if incremental else None
             for middle in sorted(set(incoming) & set(outgoing)):
                 for i in incoming[middle]:
                     for o in outgoing[middle]:
                         source, dest = endpoints(i)[0], endpoints(o)[1]
-                        if order(i) < order(o) and source != dest:
+                        if order(i) < order(o) and source != dest and (affected_routes is None or (source, dest) in affected_routes):
                             routes[(source, dest)].append((middle, i, o))
             for (source, dest), paths in sorted(routes.items()):
                 middles = {p[0] for p in paths}
@@ -226,14 +241,15 @@ class Engine:
                         [f'{source} routed transfers through {len(middles)} intermediaries to {dest}, in event-time order.'], len(middles) / 4))
         if 'BIPARTITE' in self.enabled:
             senders = sorted(outgoing)
-            for index, a in enumerate(senders):
-                for b in senders[index + 1:]:
-                    common = ({endpoints(e)[1] for e in outgoing[a]} & {endpoints(e)[1] for e in outgoing[b]}) - {a, b}
-                    if len(common) >= 2:
-                        matching = [e for s in (a, b) for e in outgoing[s] if endpoints(e)[1] in common]
-                        results.append(self.finding('BIPARTITE', [a, b], matching,
-                            {a: 'origin', b: 'origin', **{t: 'destination' for t in common}},
-                            [f'{a} and {b} both transferred to the same {len(common)} destinations (a complete 2×2 substructure).'], .6))
+            pairs = (sorted((min(current_source, b), max(current_source, b)) for b in senders if b != current_source)
+                     if incremental else ((a, b) for index, a in enumerate(senders) for b in senders[index + 1:]))
+            for a, b in pairs:
+                common = ({endpoints(e)[1] for e in outgoing[a]} & {endpoints(e)[1] for e in outgoing[b]}) - {a, b}
+                if len(common) >= 2:
+                    matching = [e for s in (a, b) for e in outgoing[s] if endpoints(e)[1] in common]
+                    results.append(self.finding('BIPARTITE', [a, b], matching,
+                        {a: 'origin', b: 'origin', **{t: 'destination' for t in common}},
+                        [f'{a} and {b} both transferred to the same {len(common)} destinations (a complete 2×2 substructure).'], .6))
         # Trace time-ordered simple paths ending at the new edge. A bounded search
         # makes runtime predictable; exhaustion yields no extra findings.
         if current in edges and {'CYCLE', 'STACK'} & set(self.enabled):
@@ -267,19 +283,24 @@ class Engine:
     def correlate(self, finding, observed):
         related = []
         connections = []
+        transactions, anchors = self._finding_sets[finding['id']]
+        observed_time = datetime.fromisoformat(observed)
         for case in self.cases:
-            prior = [self.findings[key] for key in case['findingIds']]
-            links = [p for p in prior if set(p['transactionIds']) & set(finding['transactionIds']) or
-                     (set(p['anchors']) & set(finding['anchors']) and
-                      abs(datetime.fromisoformat(observed) - datetime.fromisoformat(case['lastSeen'])) <= GRAPH_WINDOW)]
+            within_window = abs(observed_time - datetime.fromisoformat(case['lastSeen'])) <= GRAPH_WINDOW
+            links = []
+            for key in case['findingIds']:
+                prior_transactions, prior_anchors = self._finding_sets[key]
+                shared = transactions & prior_transactions
+                shared_anchors = anchors & prior_anchors
+                if shared or (shared_anchors and within_window):
+                    links.append((self.findings[key], shared, shared_anchors))
             if links:
                 related.append(case)
-                for prior_finding in links:
-                    shared = sorted(set(prior_finding['transactionIds']) & set(finding['transactionIds']))
+                for prior_finding, shared, shared_anchors in links:
                     if prior_finding['id'] != finding['id']:
                         connections.append({'findingId': finding['id'], 'priorFindingId': prior_finding['id'],
                             'via': 'shared transactions' if shared else 'shared structural anchors',
-                            'sharedIds': shared or sorted(set(prior_finding['anchors']) & set(finding['anchors'])),
+                            'sharedIds': sorted(shared or shared_anchors),
                             'observedAt': observed})
         if related:
             case = min(related, key=lambda c: c['id'])
@@ -289,15 +310,19 @@ class Engine:
                     case['mergedCaseIds'] = sorted(set(case['mergedCaseIds'] + [merged['id']] + merged['mergedCaseIds']))
                     case['timeline'] += merged['timeline']
                     case['connections'] += merged['connections']
+                    self._connection_keys[case['id']].update(self._connection_keys.pop(merged['id']))
                     self.cases.remove(merged)
         else:
             case = {'id': f'case-{len(self.findings):04d}-{finding["id"][-6:]}', 'firstSeen': observed,
                     'lastSeen': observed, 'findingIds': [], 'timeline': [], 'mergedCaseIds': [], 'connections': []}
             self.cases.append(case)
+            self._connection_keys[case['id']] = set()
+        connection_keys = self._connection_keys[case['id']]
         for link in connections:
-            if not any(old['findingId'] == link['findingId'] and old['priorFindingId'] == link['priorFindingId']
-                       and old['via'] == link['via'] and old['sharedIds'] == link['sharedIds'] for old in case['connections']):
+            identity = (link['findingId'], link['priorFindingId'], link['via'], tuple(link['sharedIds']))
+            if identity not in connection_keys:
                 case['connections'].append(link)
+                connection_keys.add(identity)
         case['findingIds'] = sorted(set(case['findingIds'] + [finding['id']]))
         case['lastSeen'] = observed
         all_findings = [self.findings[key] for key in case['findingIds']]

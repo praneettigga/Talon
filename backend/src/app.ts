@@ -1,13 +1,14 @@
 import express from 'express';
 import { controlSchema, simulationSchema } from './contracts.js';
 import { Replay } from './replay.js';
+import { missingCaseEvaluation, type CaseEvaluation } from './evaluation.js';
 
-export function createApp(replay: Replay) {
+export function createApp(replay: Replay, caseEvaluation: CaseEvaluation = missingCaseEvaluation) {
   const app = express();
   app.use(express.json({ limit: '8kb' }));
   app.get('/v1/health', (_request, response) => {
     const snapshot = replay.snapshot();
-    response.json({ status: 'ok', milestone: 5, replay: snapshot.status, intelligence: snapshot.intelligence.status,
+    response.json({ status: 'ok', milestone: 6, caseEvaluation: caseEvaluation.status, replay: snapshot.status, intelligence: snapshot.intelligence.status,
       models: snapshot.intelligence.models.status, enrichment: snapshot.intelligence.enrichment.status });
   });
   app.get('/v1/events', (_request, response) => response.json(replay.snapshot()));
@@ -57,6 +58,9 @@ export function createApp(replay: Replay) {
     const models = replay.snapshot().intelligence.models;
     if (models.status !== 'ready') { response.status(503).json({ status: 'unavailable', error: models.error }); return; }
     response.json(models.evaluation);
+  });
+  app.get('/v1/evaluation/cases', (_request, response) => {
+    response.status(caseEvaluation.status === 'ready' ? 200 : 503).json(caseEvaluation);
   });
   app.post('/v1/interventions/simulate', async (request, response) => {
     const parsed = simulationSchema.safeParse(request.body);

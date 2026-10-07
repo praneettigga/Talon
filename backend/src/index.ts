@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { loadReplayInput, Replay } from './replay.js';
 import { PythonWorker, unavailable } from './worker.js';
+import { loadCaseEvaluation } from './evaluation.js';
 
 const path = process.env.TALON_REPLAY_FILE ?? fileURLToPath(new URL('../../data/replay/replay.json', import.meta.url));
 let replay: Replay;
@@ -16,7 +17,7 @@ catch {
   console.error(message);
   replay = new Replay(null, message);
 }
-const app = createApp(replay);
+const app = createApp(replay, await loadCaseEvaluation());
 const port = Number(process.env.PORT ?? 3001);
 const server = app.listen(port, '127.0.0.1');
 server.once('listening', () => {
