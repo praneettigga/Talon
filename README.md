@@ -48,17 +48,24 @@ Checksums identify the files actually validated, not an independently verified p
 
 ### Manual ZIP setup (no API credentials)
 
-Place the downloaded Kaggle ZIP at `data/raw/amlworld/archive.zip`, then run from the
-repository root:
+The supplied archive is `docs/data/raw/amlworld/archive.zip`. From the repository root, extract only
+the HI-Small source files into the backend's raw data directory, then validate them:
 
 ```bash
-unzip -n data/raw/amlworld/archive.zip HI-Small_Trans.csv HI-Small_accounts.csv HI-Small_Patterns.txt -d data/raw/amlworld
+mkdir -p data/raw/amlworld
+unzip -n docs/data/raw/amlworld/archive.zip HI-Small_Trans.csv HI-Small_accounts.csv HI-Small_Patterns.txt -d data/raw/amlworld
 npm run data:profile
 ```
 
 This extracts only HI-Small and keeps the ZIP. `-n` preserves any already extracted files.
 This route needs Python and `unzip`, but does not need the Kaggle CLI or credentials.
 The same validator and manifest are used for both download routes.
+
+This extracts only HI-Small and leaves the source ZIP under `docs/data/raw/amlworld/`. `-n` preserves any
+already extracted files. The frontend data room reads the backend's observed replay prefix
+and presents cases, accounts, transfers, and findings derived from those observations; it
+does not load the 5-million-row source CSV into the browser. After validation, follow
+`Run and verify` below to prepare scoring artifacts and generate the replay snapshot.
 
 The supplied archive has been validated: 5,078,345 transactions (5,177 labelled laundering),
 518,581 account rows, and 370 pattern attempts. All 3,209 pattern transaction rows match

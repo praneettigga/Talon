@@ -5,12 +5,13 @@ import { Risk } from './Risk';
 import { Intervention, type HoldPreview } from './Intervention';
 import { Enrichment } from './Enrichment';
 
-export function Investigation({ intelligence, events, selectedTransaction, onSelectTransaction, replayStatus }: {
+export function Investigation({ intelligence, events, selectedTransaction, onSelectTransaction, replayStatus, initialCaseId }: {
   intelligence: IntelligenceSnapshot; events: ReplayEvent[]; selectedTransaction: string | null;
   onSelectTransaction: (id: string) => void;
   replayStatus: ReplayStatus;
+  initialCaseId?: string | null;
 }) {
-  const [caseId, setCaseId] = useState<string | null>(null);
+  const [caseId, setCaseId] = useState<string | null>(initialCaseId ?? null);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [preview, setPreview] = useState<HoldPreview | null>(null);
   const cases = intelligence.cases;
@@ -19,6 +20,7 @@ export function Investigation({ intelligence, events, selectedTransaction, onSel
   const roles = useMemo(() => Object.fromEntries(selected?.entities.map(entity => [entity.id, entity.roles.join(', ')]) ?? []), [selected]);
   const entity = selected?.entities.find(item => item.id === accountId) ?? selected?.entities.find(item => !item.roles.every(role => role === 'counterparty'));
   const features = entity && intelligence.entities[entity.id];
+  useEffect(() => { setCaseId(initialCaseId ?? null); setAccountId(null); }, [initialCaseId]);
   useEffect(() => { setPreview(null); }, [selected?.id]);
   const links = useMemo(() => intelligence.enrichment.links.filter(link =>
     link.accountIds.filter(id => selected?.entities.some(e => e.id === id)).length >= 2), [intelligence.enrichment.links, selected]);

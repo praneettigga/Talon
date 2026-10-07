@@ -10,15 +10,20 @@
     "test:ui": "playwright test -c playwright.config.ts"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.10",
     "cytoscape": "^3.34.3",
+    "lucide-react": "^0.468.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-force-graph-3d": "^1.29.2",
+    "tailwindcss": "^4.1.10"
   },
   "devDependencies": {
     "@types/cytoscape": "^3.21.9",
     "@types/react": "^19.2.0",
     "@playwright/test": "^1.63.0",
     "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
     "vite": "^7.1.0"
   }
 }

@@ -1,0 +1,91 @@
+import { useMemo, useRef } from 'react'
+import ForceGraph3D from 'react-force-graph-3d'
+import type { ForceGraphMethods } from 'react-force-graph-3d'
+import type { GraphLink, GraphNode, Severity } from '../types'
+
+type Props = {
+  nodes: GraphNode[]
+  links: GraphLink[]
+  activeCaseId: string
+  replayTransactionId: string
+  selectedTransactionId: string
+  reducedMotion: boolean
+  heatmap: boolean
+  heldAccountIds: string[]
+  interruptedTransferIds: string[]
+  onCase: (caseId: string) => void
+  onAccount: (node: GraphNode) => void
+  onContext: (node: GraphNode) => void
+  onTransaction: (link: GraphLink) => void
+}
+
+const severityColor: Record<Severity, string> = {
+  CRITICAL: '#ff5277',
+  HIGH: '#ff9b5e',
+  MEDIUM: '#f4c75e',
+  LOW: '#55c5aa',
+}
+
+function nodeColor(node: GraphNode, activeCaseId: string) {
+  if (node.kind === 'case') return severityColor[node.severity ?? 'MEDIUM']
+  if (node.kind === 'device') return '#d1a65d'
+  if (node.kind === 'network') return '#8798a2'
+  if (node.caseId !== activeCaseId) return '#758395'
+  return node.riskScore == null ? '#758395' : node.riskScore >= 80 ? '#ff9472' : node.riskScore >= 60 ? '#efc16b' : '#70c9b0'
+}
+
+function heatColor(score: number | null) {
+  if (score == null) return '#758395'
+  return score >= 70 ? '#ff5277' : score >= 40 ? '#f4c75e' : '#55c5aa'
+}
+
+function transferCurvature(link: GraphLink) {
+  const id = link.transaction?.transaction_id
+  if (!id) return 0
+  let hash = 0
+  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) | 0
+  return ((Math.abs(hash) % 7) - 3) * 0.035
+}
+
+export default function NetworkGraph({ nodes, links, activeCaseId, replayTransactionId, selectedTransactionId, reducedMotion, heatmap, heldAccountIds, interruptedTransferIds, onCase, onAccount, onContext, onTransaction }: Props) {
+  const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink> | undefined>(undefined)
+  // react-force-graph mutates node/link objects while running its force simulation.
+  // Keep that mutable state inside this renderer instead of corrupting adapter data.
+  const graphData = useMemo(() => ({ nodes: nodes.map(node => ({ ...node })), links: links.map(link => ({ ...link })) }), [nodes, links])
+
+  return (
+    <div className="network-canvas">
+      <ForceGraph3D<GraphNode, GraphLink>
+        ref={graphRef}
+        graphData={graphData}
+        backgroundColor="#0a1018"
+        showNavInfo={false}
+        nodeLabel={(node) => `${node.kind === 'case' ? `${node.severity} CASE` : node.kind.toUpperCase()} · ${node.name} · Risk ${node.riskScore?.toFixed(1) ?? 'unavailable'}`}
+        nodeColor={(node) => node.kind === 'account' && heldAccountIds.includes(node.name) ? '#ff5277' : heatmap ? heatColor(node.riskScore) : nodeColor(node, activeCaseId)}
+        nodeVal={(node) => node.kind === 'case' ? 13 : 4 + (node.riskScore ?? 0) / 36}
+        nodeOpacity={0.94}
+        linkColor={(link) => link.kind === 'involves' ? 'rgba(117, 137, 158, .30)' : link.kind === 'context' ? 'rgba(209, 166, 93, .55)' : link.transaction && interruptedTransferIds.includes(link.transaction.transaction_id) ? '#ff5277' : link.transaction?.transaction_id === (selectedTransactionId || replayTransactionId) ? '#f3cf83' : heatmap ? heatColor(link.transaction?.risk_score ?? null) : 'rgba(76, 207, 180, .60)'}
+        linkOpacity={0.76}
+        linkCurvature={transferCurvature}
+        linkWidth={(link) => link.kind === 'involves' || link.kind === 'context' ? 0.8 : link.transaction && interruptedTransferIds.includes(link.transaction.transaction_id) ? 3 : link.transaction?.transaction_id === (selectedTransactionId || replayTransactionId) ? 3 : 1.1 + (link.transaction?.risk_score ?? 0) / 70}
+        linkDirectionalArrowLength={(link) => link.kind === 'transaction' ? 3.6 : 0}
+        linkDirectionalArrowRelPos={0.88}
+        linkDirectionalArrowColor={(link) => link.kind !== 'transaction' ? 'transparent' : link.transaction && interruptedTransferIds.includes(link.transaction.transaction_id) ? '#ff5277' : link.transaction?.transaction_id === (selectedTransactionId || replayTransactionId) ? '#f3cf83' : '#64d7bd'}
+        linkDirectionalParticles={(link) => link.kind === 'transaction' && !reducedMotion ? 2 : 0}
+        linkDirectionalParticleWidth={1.8}
+        linkDirectionalParticleSpeed={0.004}
+        linkDirectionalParticleColor={() => '#84ffe0'}
+        linkLabel={(link) => link.transaction ? `${link.transaction.transaction_id} · ${link.transaction.amount} ${link.transaction.currency} · ${new Date(link.transaction.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : link.kind === 'context' ? `Synthetic ${link.contextLabel} context` : 'Involved in case'}
+        onNodeClick={(node) => node.kind === 'case' ? onCase(node.caseId) : node.kind === 'account' ? onAccount(node) : onContext(node)}
+        onLinkClick={(link) => link.kind === 'transaction' && onTransaction(link)}
+        cooldownTicks={reducedMotion ? 70 : 140}
+        warmupTicks={30}
+        enableNodeDrag
+        enableNavigationControls
+      />
+      <button className="graph-reset" onClick={() => graphRef.current?.zoomToFit(650, 65)} title="Fit all visible nodes">
+        Fit network
+      </button>
+    </div>
+  )
+}

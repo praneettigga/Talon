@@ -28,7 +28,8 @@ export class PythonWorker implements IntelligenceWorker {
     reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>; simulation: boolean }>();
   constructor() {
     const localPython = fileURLToPath(new URL('../../.venv/bin/python', import.meta.url));
-    this.process = spawn(process.env.TALON_PYTHON ?? (existsSync(localPython) ? localPython : 'python'), ['-u', '-m', 'backend.python.worker'], {
+    const systemPython = process.platform === 'win32' ? 'python' : 'python3';
+    this.process = spawn(process.env.TALON_PYTHON ?? (existsSync(localPython) ? localPython : systemPython), ['-u', '-m', 'backend.python.worker'], {
       cwd: fileURLToPath(new URL('../../', import.meta.url)), stdio: 'pipe',
     });
     const lines = createInterface({ input: this.process.stdout });
