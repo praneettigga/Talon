@@ -461,7 +461,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .subpage-heading h1 { margin: 5px 0 6px; color: #eef4f4; font-size: 27px; font-weight: 570; letter-spacing: -.05em; }
 .subpage-heading p { max-width: 650px; margin: 0; color: #788993; font-size: 14px; line-height: 1.45; }
 .summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 16px; }
-.summary-strip > div, .subpage-card, .intervention-intro-card, .intervention-guide { border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(145deg, rgba(18, 28, 37, .93), rgba(11, 17, 24, .93)); }
+.summary-strip > div, .subpage-card { border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(145deg, rgba(18, 28, 37, .93), rgba(11, 17, 24, .93)); }
 .summary-strip > div { min-height: 77px; padding: 14px 16px; }
 .summary-strip span { display: block; color: #71828d; font-size: 10px; font-weight: 700; letter-spacing: .1em; }
 .summary-strip strong { display: block; margin-top: 8px; color: #d9e6e6; font-size: 16px; font-weight: 550; }
@@ -505,19 +505,8 @@ tbody tr:last-child td { border-bottom: 0; }
 .investigation-page .case-detail h2, .investigation-page .case-detail h3 { color: #e3eeee; }
 .investigation-page .evidence-card, .investigation-page .context-card, .investigation-page .simulation-details details { color: #becdce; background: rgba(255,255,255,.035); }
 .investigation-page .graph-wrap { background: #0a1018; }
-.intervention-landing { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, .65fr); gap: 16px; max-width: 960px; }
-.intervention-intro-card, .intervention-guide { padding: 22px; }
-.intervention-intro-card h2 { margin: 7px 0; color: #e5eeee; font-size: 19px; }
-.intervention-intro-card p { color: #82939b; line-height: 1.5; }
-.intervention-intro-card ul { margin: 18px 0; padding-left: 18px; color: #a7b8bc; font-size: 13px; line-height: 1.8; }
-.intervention-guide { display: grid; align-content: start; gap: 0; }
-.intervention-guide .eyebrow { margin-bottom: 7px; }
-.intervention-guide div { padding: 13px 0; border-top: 1px solid var(--line); }
-.intervention-guide b, .intervention-guide span { display: block; }
-.intervention-guide b { color: #cddbdd; font-size: 13px; }
-.intervention-guide span { margin-top: 4px; color: #758690; font-size: 12px; line-height: 1.4; }
 @media (max-width: 1180px) { .product-nav { margin-left: 12px; }.product-nav button { padding: 0 6px; font-size: 11px; }.topbar-right { gap: 8px; }.stream-status { display: none; } }
-@media (max-width: 880px) { .product-nav { overflow-x: auto; margin-left: 8px; }.topbar-divider, .workspace-crumb { display: none; }.brand-lockup { min-width: max-content; }.summary-strip { grid-template-columns: repeat(2, 1fr); }.activity-columns, .risk-columns, .intervention-landing { grid-template-columns: 1fr; }.model-scoreboard { grid-template-columns: repeat(2, minmax(0, 1fr)); }.scoreboard-intro { grid-column: 1 / -1; }.persistent-feed { max-height: 440px; min-height: 280px; }.dashboard-section { padding: 20px 16px 34px; }.subpage-heading { align-items: flex-start; flex-direction: column; }.investigation-page .investigation { grid-template-columns: 1fr; }.investigation-page .case-list { max-height: 250px; } }
+@media (max-width: 880px) { .product-nav { overflow-x: auto; margin-left: 8px; }.topbar-divider, .workspace-crumb { display: none; }.brand-lockup { min-width: max-content; }.summary-strip { grid-template-columns: repeat(2, 1fr); }.activity-columns, .risk-columns { grid-template-columns: 1fr; }.model-scoreboard { grid-template-columns: repeat(2, minmax(0, 1fr)); }.scoreboard-intro { grid-column: 1 / -1; }.persistent-feed { max-height: 440px; min-height: 280px; }.dashboard-section { padding: 20px 16px 34px; }.subpage-heading { align-items: flex-start; flex-direction: column; }.investigation-page .investigation { grid-template-columns: 1fr; }.investigation-page .case-list { max-height: 250px; } }
 @media (max-width: 560px) { .topbar { padding: 0 12px; }.brand-lockup small, .topbar-right .icon-button { display: none; }.product-nav button { font-size: 10px; }.summary-strip { grid-template-columns: 1fr; }.transfer-detail { grid-template-columns: 1fr; }.subpage-heading h1 { font-size: 23px; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -787,7 +776,7 @@ tbody tr:last-child td { border-bottom: 0; }
   background: linear-gradient(100deg, rgba(24, 51, 54, .72), rgba(16, 24, 32, .88));
 }
 .subpage-heading p { max-width: 620px; }
-.summary-strip > div, .subpage-card, .intervention-intro-card, .intervention-guide,
+.summary-strip > div, .subpage-card,
 .panel, .model-status, .enrichment-summary, .import-side-panel, .import-graph-panel {
   border-color: rgba(136, 171, 181, .18);
   background: linear-gradient(145deg, #15212b, #0e161e);
@@ -804,7 +793,7 @@ tbody tr:last-child td { border-bottom: 0; }
   color: #f0f6f5;
   font-weight: 650;
 }
-.subpage-card > .eyebrow + h2, .intervention-intro-card > .eyebrow + h2 {
+.subpage-card > .eyebrow + h2 {
   padding-left: 10px;
   border-left: 2px solid #66c9b1;
 }
@@ -824,12 +813,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .case-card-details, .inline-risk, .risk-panel, .analytics-section {
   background: rgba(8, 14, 20, .38);
 }
-.case-card-details p, .subpage-card p, .intervention-intro-card p, .context-card p,
+.case-card-details p, .subpage-card p, .context-card p,
 .evidence-card p, .inspector-meta, .inspector-reason {
   max-width: 68ch;
   line-height: 1.6;
 }
-.intervention-guide div, .analytics-section, .case-columns > div + div {
+.analytics-section, .case-columns > div + div {
   border-top-color: rgba(140, 174, 184, .16);
 }
 .data-rail { border-left-color: rgba(140, 174, 184, .18); }
@@ -855,7 +844,6 @@ td { color: #c1cdd1; }
 .model-scoreboard { border-color: rgba(101, 204, 178, .33); }
 .model-scoreboard > div { background: linear-gradient(145deg, #172832, #101a22); }
 .model-scoreboard > div:not(.scoreboard-intro) { border-top: 2px solid rgba(102, 205, 180, .55); }
-.intervention-intro-card ul { display: grid; gap: 8px; }
 .import-graph-footer, .dataset-foot, .app-footer {
   border-top-color: rgba(140, 174, 184, .18);
   background: #0b1218;
@@ -1068,7 +1056,7 @@ tbody tr:hover { background: #f0f7e8; }
 .subpage-heading { border-color: #e0e7db; border-left-color: #7da63a; border-radius: 13px; background: #fff; box-shadow: 0 4px 13px rgba(46, 64, 48, .04); }
 .heading-left h2, .subpage-heading h1, .subpage-card h2, .subpage-card-head h2 { color: #2d3c35; }
 .heading-left p, .subpage-heading p { color: #77857d; }
-.summary-strip > div, .subpage-card, .intervention-intro-card, .intervention-guide, .panel, .model-status, .enrichment-summary { border-color: #e0e7dd; background: #fff; box-shadow: 0 4px 14px rgba(45, 62, 47, .04); }
+.summary-strip > div, .subpage-card, .panel, .model-status, .enrichment-summary { border-color: #e0e7dd; background: #fff; box-shadow: 0 4px 14px rgba(45, 62, 47, .04); }
 .summary-strip > div { border-top-color: #94b960; }
 .summary-strip strong { color: #35453d; }
 .live-feed-row { border-color: #e1e7df !important; background: #fff !important; }
@@ -1087,4 +1075,316 @@ tbody tr:hover { background: #f0f7e8; }
   .graph-toolbar { border-radius: 10px 10px 0 0; }
   .data-rail { top: 58px; }
   .rail-backdrop { inset: 58px 0 25px; }
+}
+
+/* Complete the light treatment inside graphs, dialogs, and secondary controls. */
+.graph-panel { background: #f7faf3; }
+.graph-panel::before { background-image: linear-gradient(rgba(109, 137, 103, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(109, 137, 103, .08) 1px, transparent 1px); }
+.graph-panel::after { background: radial-gradient(ellipse at 50% 45%, transparent 25%, rgba(221, 232, 213, .34) 100%); }
+.graph-hud, .graph-instruction { color: #61725e; text-shadow: 0 1px #fff; }
+.hud-separator { color: #aab8a5; }
+.graph-inspector, .selected-case-float { border-color: #d9e5d1; background: rgba(255, 255, 255, .91); box-shadow: 0 10px 26px rgba(76, 96, 67, .12); }
+.inspector-section .eyebrow { color: #77906f; }
+.inspector-title, .selected-case-float > strong { color: #35453c; }
+.inspector-meta, .inspector-reason, .inspector-empty, .selected-case-float p, .inspector-context-note { color: #728078; }
+.inspector-risk-list li { border-bottom-color: #edf1e9; }
+.inspector-risk-list button { color: #627269; }
+.inspector-risk-list button:hover { color: #557b26; }
+.graph-breadcrumb button, .graph-breadcrumb span { color: #52664e; }
+.graph-reset { border-color: #d6e3ce; color: #51694b; background: rgba(255, 255, 255, .92); box-shadow: 0 2px 7px rgba(60, 82, 53, .08); }
+.graph-reset:hover { border-color: #aac888; color: #4f7720; background: #f7fbf1; }
+.knowledge-graph-2d-canvas, .flow-canvas { background: #f7faf3; }
+
+input:not([type="range"]), select, textarea {
+  border-color: #dfe7da;
+  color: #415149;
+  background-color: #fbfcf9;
+}
+input:not([type="range"])::placeholder, textarea::placeholder { color: #9ba69f; }
+select:focus, input:not([type="range"]):focus, textarea:focus { border-color: #9ebd72; }
+.feature-modal-backdrop { background: rgba(53, 66, 53, .27); }
+.feature-modal { border-color: #dce6d6; background: #f7f9f5; box-shadow: 0 24px 70px rgba(48, 65, 49, .18); }
+.feature-modal-heading { border-bottom-color: #e0e7dc; background: #fff; }
+.feature-modal-heading h2 { color: #34443c; }
+.feature-modal .panel, .feature-modal .case-detail, .feature-modal .case-queue, .feature-modal .model-status { color: #405049; border-color: #e0e7dc; background: #fff; }
+.feature-modal .panel-heading, .feature-modal .case-columns, .feature-modal .account-details, .feature-modal .intervention, .feature-modal .synthetic-context, .feature-modal .risk-panel { border-color: #e4eae1; }
+.feature-modal .panel-heading h2, .feature-modal h3, .feature-modal .model-status h2 { color: #33433b; }
+.feature-modal .case-item, .feature-modal .case-item:hover { color: #405049; border-color: #e4eae1; background: #fff; }
+.feature-modal .case-item.selected { background: #f0f7e8; box-shadow: inset 3px 0 #7da63a; }
+.feature-modal .evidence-card, .feature-modal .context-card, .feature-modal .simulation-details details, .feature-modal .risk-metrics > div { color: #55655c; border-color: #e1e8dc; background: #f7f9f5; }
+.feature-modal .risk-metrics strong, .feature-modal dd { color: #35453d; }
+.feature-modal select, .feature-modal button:not(.icon-button), .feature-modal input { color: #43544b; border-color: #dfe7da; background-color: #fbfcf9; }
+.feature-modal .graph-wrap, .feature-modal .graph-canvas-wrap { border-color: #e1e8dc; background: #f7faf3; }
+.whatif-dialog { border-color: #dfe7d9; background: #fff; box-shadow: 0 24px 70px rgba(48, 65, 49, .2); }
+.dialog-head, .whatif-options, .simulation-note { border-color: #e2e8df; }
+.dialog-head h2, .whatif-name strong, .result-stat strong { color: #35453d; }
+.dialog-intro, .whatif-name small, .result-stat span, .simulation-note { color: #75837b; }
+.whatif-account:hover { background: #f7faf3; }
+.whatif-account-selected { border-color: #c9dcad; background: #f3f8ec; }
+.checkmark { border-color: #b8c7b4; background: #fff; }
+.whatif-account-selected .checkmark { color: #fff; border-color: #739a38; background: #739a38; }
+.simulation-links { border-color: #e1e8de; background: #f8faf6; }
+.simulation-links > div { color: #6f7e75; }
+.simulation-links > div b { color: #46574e; }
+.simulation-note { background: #f7f9f5; }
+
+/* Imported datasets and the analysis progress view use the same readable light system. */
+.import-app-shell, .detection-screen { color: #405049; background: linear-gradient(135deg, #f8faf6, #eef3eb); }
+.import-topbar, .detection-topbar { border-bottom-color: #e0e7dc; background: rgba(255, 255, 255, .9); }
+.import-workspace-heading { padding: 20px 24px 18px; }
+.import-workspace-heading h1 { color: #2f4037; font-size: 22px; font-weight: 680; }
+.import-workspace-heading p { max-width: 760px; color: #65756c; font-size: 15px; line-height: 1.6; }
+.import-workspace-heading p span { color: #a1ada4; }
+.import-detection-status { color: #60872a; }
+.import-check { border-color: #cde0b4; color: #668d2d; background: #f0f7e7; }
+.import-layout { gap: 16px; padding: 0 20px 16px; }
+.import-side-panel, .import-graph-panel { border-color: #dde6d8; border-radius: 13px; background: #fff; box-shadow: 0 5px 18px rgba(46, 65, 47, .06); }
+.import-panel-head, .analytics-account-head { min-height: 64px; padding: 13px 15px; border-bottom-color: #e3e9df; background: #fff; }
+.import-panel-head h2, .analytics-account-head h2, .import-graph-toolbar h2 { color: #304038; font-weight: 680; }
+.import-account-count, .import-panel-head .eyebrow { color: #7d8c82; }
+.import-search { height: 38px; margin: 12px 13px 10px; padding: 0 10px; border-color: #dfe7da; border-radius: 9px; color: #738178; background: #f7f9f5; }
+.import-search input { color: #415149; }
+.import-search input::placeholder { color: #98a49c; }
+.import-filter-row { gap: 10px; padding: 0 13px 12px; }
+.import-filter-row label { color: #66766d; }
+.import-filter-row select { height: 30px; border-color: #dfe7da; border-radius: 7px; color: #46574e; background: #fbfcf9; }
+.import-table-scroll, .analytics-panel, .transaction-table-scroll { scrollbar-color: #b7c7ae transparent; }
+.import-account-table th, .account-transaction-table th { border-color: #e1e8dd; color: #718078; background: #f4f7f2; }
+.import-account-table td, .account-transaction-table td { border-bottom-color: #edf1eb; color: #52625a; }
+.import-account-table td strong { color: #45574e; }
+.import-account-table tbody tr:hover { background: #f3f8ed; }
+.import-account-table tbody tr.selected { background: #edf6e3; box-shadow: inset 3px 0 #79a33b; }
+.fraud-type-cell, .import-no-results { color: #748179 !important; }
+.import-risk { font-size: 10px; }
+.import-risk-critical { color: #ba514b; border-color: #f0d3d0; background: #fff0ef; }
+.import-risk-high { color: #b87545; border-color: #f0dcc8; background: #fff6ed; }
+.import-risk-medium { color: #977825; border-color: #ede1bd; background: #fffbed; }
+.import-risk-low { color: #557a9f; border-color: #d4e0ec; background: #f0f5fa; }
+.dataset-foot { min-height: 38px; padding: 0 13px; border-top-color: #e4e9e1; color: #748179; font-size: 12px; }
+.dataset-foot svg { color: #749d37; }
+
+.import-graph-panel { background: #fff; }
+.import-graph-toolbar { min-height: 64px; padding: 12px 15px; border-bottom-color: #e3e9df; background: #fff; }
+.graph-key span { color: #65746b; }
+.key-fraud { background: #d76655; box-shadow: none; }
+.key-account { background: #527ca5; }
+.key-unlinked { background: #9aa8a0; }
+.import-breadcrumb { min-height: 36px; padding: 0 15px; color: #75837a; border-bottom-color: #e8ede5; background: #f8faf6; }
+.import-breadcrumb button { color: #557b27; }
+.import-breadcrumb button:hover { color: #3e5e1c; }
+.import-breadcrumb span { color: #47584f; }
+.import-graph-viewport, .import-network-canvas { background: #f7faf3; }
+.network-controls { border-color: #d7e2d0; border-radius: 8px; color: #69786f; background: rgba(255, 255, 255, .92); box-shadow: 0 3px 10px rgba(55, 75, 55, .09); }
+.network-controls i { background: #a8b5a5; }
+.network-controls button { border-color: #dce6d6; border-radius: 6px; color: #52644f; background: #fff; }
+.graph-rotate-dot { background: #6f9d2c; box-shadow: none; }
+.collapse-graph { border-color: #d6e2cf; border-radius: 8px; color: #50644e; background: rgba(255, 255, 255, .94); }
+.import-graph-empty { color: #738078; background: rgba(247, 250, 243, .78); }
+.import-graph-footer { min-height: 38px; padding: 0 14px; border-top-color: #e3e9df; color: #738078; background: #fff; }
+.import-graph-footer span:first-child, .import-graph-footer svg { color: #678c31; }
+.import-graph-footer i { background: #a9b6a4; }
+.import-fraud-backdrop { background: rgba(63, 80, 62, .16); }
+.import-fraud-card { border-color: #d6e3ce; border-radius: 12px; background: #fff; box-shadow: 0 15px 40px rgba(49, 68, 51, .16); }
+.import-fraud-card .eyebrow { color: #698f35; }
+.import-fraud-card h3 { color: #34443c; }
+.import-fraud-card p { color: #68776e; }
+.import-fraud-card small { color: #87938b; }
+
+.analytics-account-head { background: #fff; }
+.account-fraud-type, .risk-score-block, .account-kpis, .analytics-section { border-bottom-color: #e6ebe3; }
+.account-fraud-type span, .risk-score-block span, .account-kpis span { color: #7b8980; }
+.account-fraud-type strong, .account-kpis strong, .import-section-title h3, .analytics-empty h2 { color: #3c4c44; }
+.risk-score-block { background: linear-gradient(100deg, #f4f8ee, #fff 80%); }
+.risk-score-block > div small, .chart-row-note, .chart-empty, .analytics-empty { color: #7a887f; }
+.risk-score-block > strong, .score-low { color: #557da4 !important; }
+.score-critical { color: #bd504b !important; }.score-high { color: #b87545 !important; }.score-medium { color: #977825 !important; }
+.account-kpis > div { border-color: #e2e9dd; border-radius: 8px; background: #f9fbf7; }
+.analytics-section { padding: 14px; background: #fff; }
+.import-section-title span { color: #839087; }
+.why-flagged li { color: #65756c; }
+.why-flagged li span { color: #668f30; }
+.empty-transaction-table { color: #7a887f; }
+.import-footer { min-height: 32px; border-top-color: #e0e7dc; color: #748179; background: #fff; }
+.import-footer > span:first-child { color: #668d30; }
+.import-footer button { color: #607168; }
+
+.detection-content { width: min(760px, calc(100% - 40px)); margin: 48px auto 44px; }
+.detection-kicker { color: #678d31; }
+.detection-kicker > span:nth-child(2) { color: #97a39b; }
+.detection-pulse { background: #739d36; box-shadow: 0 0 0 4px rgba(115, 157, 54, .12); }
+.detection-content h1 { color: #2f4037; font-size: 30px; font-weight: 680; }
+.detection-description, .detection-description strong { color: #68786f; }
+.detection-progress-head { margin-top: 34px; color: #68786e; }
+.detection-progress-head strong { color: #5d8628; }
+.detection-progress-head small { color: #7e9e50; }
+.detection-progress-track { height: 7px; margin: 12px 0 24px; border-color: #dce6d5; background: #eaf0e5; }
+.detection-progress-track > div { background: linear-gradient(90deg, #6c9631, #9dbf63); box-shadow: none; }
+.detection-step-list { gap: 8px; }
+.detection-step { min-height: 47px; padding: 11px 12px; border-color: #e3e9df; border-radius: 10px; background: rgba(255, 255, 255, .72); }
+.detection-step.is-active { border-color: #c9ddae; background: #f3f8ec; }
+.detection-step.is-upcoming { opacity: .72; }
+.step-mark { border-color: #d3dfcd; color: #7a8a7d; background: #fff; }
+.is-active .step-mark, .is-complete .step-mark { border-color: #aac889; color: #618b2b; background: #f1f7e9; }
+.step-title > span { color: #8b988f; }
+.step-title strong, .is-active .step-title strong { color: #405049; }
+.step-title small { color: #668e30; }
+.step-spinner { border-color: #d1e0c1; border-top-color: #719a35; }
+.parallel-heading { color: #7a887f; }
+.parallel-heading i { background: #dde6d9; }
+.parallel-tracks { gap: 10px; }
+.parallel-tracks .detection-step { border-color: #e2e9de; background: rgba(255, 255, 255, .74); }
+.parallel-tracks .detection-step.is-active { border-color: #c9ddae; background: #f3f8ec; }
+.graph-intelligence-checks span { color: #728078; }
+.graph-intelligence-checks span.checked { color: #668d30; }
+.graph-intelligence-checks span.checking { color: #596a60; }
+.graph-intelligence-checks span > i:not(.step-spinner) { border-color: #c9d5c4; }
+.detection-footnote { color: #75837a; }
+.detection-footnote svg { color: #719a35; }
+
+/* Data room header and source detail cards had legacy dark fills. */
+.rail-heading { padding: 13px 12px 14px; border-bottom: 1px solid #e2e8df; background: #fff; }
+.rail-heading .eyebrow { color: #75936e; }
+.rail-heading h2 { color: #314139; }
+.source-link-card { border-color: #dce8d2; border-radius: 9px; background: #f4f9ed; }
+.source-link-icon { border-color: #d5e5c7; color: #698f32; background: #eaf3df; }
+.source-link-card strong { color: #46574e; }
+.source-link-card > div span, .source-link-card > div b { color: #75837b; }
+.linked-badge { border-color: #cae0ae; color: #5f8828; background: #fff; }
+.table-caption { padding: 2px 4px 10px; }
+.table-caption .eyebrow { color: #7b8a80; }
+.data-scope-note { padding: 10px 4px 12px; color: #65756c; line-height: 1.55; }
+
+/* Risk & evaluation: finish the light surface instead of inheriting the old
+   dark dashboard treatment used by the original reusable components. */
+.subpage .risk-panel {
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #4f6057;
+}
+.subpage .risk-panel > .muted {
+  margin: 10px 0 0;
+  color: #68786f;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.subpage .risk-panel > .muted + .muted { margin-top: 6px; }
+.subpage .risk-metrics {
+  gap: 9px;
+  margin: 0 0 13px;
+}
+.subpage .risk-metrics > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 10px 14px;
+  border: 1px solid #e0e8db;
+  border-radius: 8px;
+  background: #fff;
+}
+.subpage .risk-metrics span {
+  display: block;
+  min-width: 0;
+  color: #7a8980;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.subpage .risk-metrics strong {
+  display: block;
+  flex: 0 0 auto;
+  margin: 0;
+  color: #33463d;
+  font-size: 17px;
+  font-weight: 680;
+  letter-spacing: -.025em;
+  font-variant-numeric: tabular-nums;
+}
+.subpage .risk-panel .contributions,
+.subpage .model-status .evaluation {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e7ece4;
+}
+.subpage details > summary {
+  color: #587c28;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+.subpage details > summary::marker { color: #86a84c; }
+.subpage .model-status {
+  margin: 0;
+  padding: 20px;
+  border-color: #dfe7db;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 5px 16px rgba(45, 62, 47, .045);
+  color: #4c5e55;
+}
+.subpage .model-status h2 {
+  margin: 0;
+  color: #33453d;
+  font-size: 17px;
+  font-weight: 680;
+  letter-spacing: -.025em;
+}
+.subpage .model-status > .muted,
+.subpage .evaluation > .muted {
+  color: #68786f;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.subpage .model-status .evaluation > .muted { margin: 8px 0 10px; }
+.subpage .risk-panel table,
+.subpage .model-status table {
+  overflow: hidden;
+  border: 1px solid #e1e8de;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+}
+.subpage .risk-panel th,
+.subpage .risk-panel td,
+.subpage .model-status th,
+.subpage .model-status td {
+  padding: 10px 9px;
+  border-bottom: 1px solid #e8ede6;
+  color: #52635a;
+  background: transparent;
+  line-height: 1.35;
+}
+.subpage .risk-panel th,
+.subpage .model-status th {
+  color: #77867d;
+  background: #f5f8f3;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.subpage .risk-panel tbody tr:nth-child(even),
+.subpage .model-status tbody tr:nth-child(even) { background: #fafcf9; }
+.subpage .risk-panel tbody tr:hover,
+.subpage .model-status tbody tr:hover { background: #f1f7eb; }
+.subpage .risk-panel tbody tr:last-child td,
+.subpage .model-status tbody tr:last-child td { border-bottom: 0; }
+.subpage .notice {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #f0dfbd;
+  border-radius: 8px;
+  color: #836632;
+  background: #fff9ed;
+}
+
+@media (max-width: 560px) {
+  .subpage .model-status { padding: 16px; }
+  .subpage .risk-metrics { grid-template-columns: 1fr; }
 }

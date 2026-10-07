@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import {
-  Activity, ArrowDownUp, ArrowLeft, BarChart3, Bell, ChevronRight, CircleHelp,
+  Activity, ArrowDownUp, ArrowLeft, BarChart3, ChevronRight, CircleHelp,
   Database, FileSearch, GitCompareArrows, Pause, Play, Radio, RotateCcw, Upload,
   Search, Shield, SlidersHorizontal, Sparkles, X,
 } from 'lucide-react'
@@ -92,13 +92,12 @@ export default function App() {
   const [caseSearch, setCaseSearch] = useState('')
   const [graphSearch, setGraphSearch] = useState('')
   const [graphType, setGraphType] = useState<GraphType>('all')
-  const [heatmap, setHeatmap] = useState(false)
   const [showWhatIf, setShowWhatIf] = useState(false)
   const [showInvestigation, setShowInvestigation] = useState(false)
   const [showAnalytics, setShowAnalytics] = useState(false)
   const [showFeed, setShowFeed] = useState(false)
   const [dataOpen, setDataOpen] = useState(false)
-  const [activePage, setActivePage] = useState<'network' | 'activity' | 'investigations' | 'risk' | 'intervention'>('network')
+  const [activePage, setActivePage] = useState<'network' | 'activity' | 'investigations' | 'risk'>('network')
   const [webgl, setWebgl] = useState(true)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [holdPreview, setHoldPreview] = useState<{ heldAccountIds: string[]; interruptedTransferIds: string[] } | null>(null)
@@ -379,16 +378,12 @@ export default function App() {
       {datasetPicker}
       <header className="topbar">
         <div className="brand-lockup"><div className="brand-mark"><Shield size={18} strokeWidth={1.8} /><span /></div><div><b>TALON</b><small>NETWORK INTELLIGENCE</small></div></div>
-        <div className="topbar-divider" />
-        <div className="workspace-crumb"><span className="crumb-muted">INVESTIGATIONS</span><ChevronRight size={13} /><span>{activeCase?.case_id ?? 'Network overview'}</span></div>
         <nav className="product-nav" aria-label="Workspace pages">
           <button className={activePage === 'network' ? 'active' : ''} onClick={() => setActivePage('network')}>Graph / cases / dataset</button>
           <button className={activePage === 'activity' ? 'active' : ''} onClick={() => setActivePage('activity')}>Activity</button>
           <button className={activePage === 'investigations' ? 'active' : ''} onClick={() => setActivePage('investigations')}>Investigation</button>
           <button className={activePage === 'risk' ? 'active' : ''} onClick={() => setActivePage('risk')}>Risk & evaluation</button>
-          <button className={activePage === 'intervention' ? 'active' : ''} onClick={() => setActivePage('intervention')}>Interventions</button>
         </nav>
-        <div className="topbar-right"><div className={`stream-status ${connected ? '' : 'stream-offline'}`}><span className="live-dot" /> {connected ? 'TALON API CONNECTED' : 'CONNECTING TO TALON'}</div><button className="icon-button top-icon" title="Notifications"><Bell size={16} /><i /></button><div className="avatar">AD</div></div>
       </header>
       {importError && <div className="import-error-banner" role="alert"><span>{importError}</span><button onClick={() => setImportError('')} aria-label="Dismiss import error"><X size={13} /></button></div>}
 
@@ -423,7 +418,7 @@ export default function App() {
         <section className="main-workspace">
           <div className="workspace-heading">
             <div className="heading-left"><span className="eyebrow">OBSERVED REPLAY</span><h2>{view === 'network' ? 'Financial network' : 'Transaction pathway'}<span className="heading-badge">{view === 'network' ? '3D' : '2D'}</span></h2><p>{view === 'network' ? activeCase ? `${activeCase.typology} · ${activeCase.entity_count} accounts · ${activeCase.transaction_count} observed transfers` : 'Observed transfers, supported structures, and synthetic context links' : `${activeCase?.typology ?? 'Observed account activity'} · ${activeCaseTransactions.length} linked transfers`}</p></div>
-          <div className="workspace-actions">{view === 'flow' ? <button className="button-quiet" onClick={() => setView('network')}><ArrowLeft size={14} /> Network</button> : graphLevel !== 'overview' && <button className="button-quiet" onClick={() => setView('flow')}>Flow view</button>}<button className="button-quiet investigation-open" disabled={!activeCase} onClick={() => setShowInvestigation(true)}><FileSearch size={13} /> Case details</button><button className="button-quiet feed-open" onClick={() => setShowFeed(true)}><Activity size={13} /> Live feed</button><button className="button-outline" disabled={!activeCase || !canControl} onClick={() => setShowWhatIf(true)}><GitCompareArrows size={14} /> Simulate hold</button><button className="icon-button data-toggle" onClick={() => setDataOpen(true)} title="Open data room"><Database size={15} /></button></div>
+          <div className="workspace-actions">{view === 'flow' && <button className="button-quiet" onClick={() => setView('network')}><ArrowLeft size={14} /> Network</button>}<button className="button-quiet investigation-open" disabled={!activeCase} onClick={() => setShowInvestigation(true)}><FileSearch size={13} /> Case details</button><button className="button-quiet feed-open" onClick={() => setShowFeed(true)}><Activity size={13} /> Live feed</button><button className="button-outline" disabled={!activeCase || !canControl} onClick={() => setShowWhatIf(true)}><GitCompareArrows size={14} /> Simulate hold</button><button className="icon-button data-toggle" onClick={() => setDataOpen(true)} title="Open data room"><Database size={15} /></button></div>
           </div>
 
           <div className="graph-toolbar graph-toolbar-live">
@@ -431,7 +426,6 @@ export default function App() {
             <div className="graph-tools"><label className="graph-search"><Search size={12} /><input aria-label="Search graph" value={graphSearch} onChange={event => setGraphSearch(event.target.value)} placeholder="Search graph" /></label>
               <select aria-label="Filter graph entity type" value={graphType} onChange={event => setGraphType(event.target.value as GraphType)}><option value="all">All types</option><option value="case">Cases</option><option value="account">Accounts</option><option value="transfer">Transfers</option><option value="device">Devices</option><option value="network">Networks</option></select>
               <span className="filter-label"><SlidersHorizontal size={13} /> Risk <b>{riskThreshold}</b></span><input aria-label="Filter graph by minimum risk" className="graph-range" type="range" min="0" max="100" step="5" value={riskThreshold} onChange={event => setRiskThreshold(Number(event.target.value))} />
-              <div className="graph-mode-toggle"><button className={!heatmap ? 'active' : ''} onClick={() => setHeatmap(false)}>Network</button><button className={heatmap ? 'active' : ''} onClick={() => setHeatmap(true)}>Heatmap</button></div>
               <span className="result-count">{visibleGraph.nodes.length} nodes</span>
             </div>
           </div>
@@ -441,9 +435,9 @@ export default function App() {
               <div className="graph-vignette" />
               {graphLevel !== 'overview' && <nav className="graph-breadcrumb" aria-label="Graph navigation"><button onClick={navigateOverview}>Network overview</button>{activeCase && <><ChevronRight size={11} /><button onClick={() => { setGraphLevel('case'); setView('network'); setFocusedAccountId('') }}>{activeCase.case_id}</button></>}{graphLevel === 'account' && focusedAccount && <><ChevronRight size={11} /><span>{focusedAccount.account_id}</span></>}</nav>}
               {webgl ? <Suspense fallback={<div className="graph-loading"><span className="loading-orbit" /><b>Preparing network renderer</b><small>Loading 3D topology</small></div>}>
-                <NetworkGraph nodes={visibleGraph.nodes} links={visibleGraph.links} activeCaseId={activeCaseIdResolved} replayTransactionId={latestEventId} selectedTransactionId={selectedTransactionId} reducedMotion={reducedMotion} heatmap={heatmap} heldAccountIds={holdPreview?.heldAccountIds ?? emptyIds} interruptedTransferIds={holdPreview?.interruptedTransferIds ?? emptyIds} onCase={handleCase} onAccount={handleAccount} onContext={handleContext} onTransaction={handleTransaction} />
+                <NetworkGraph nodes={visibleGraph.nodes} links={visibleGraph.links} activeCaseId={activeCaseIdResolved} replayTransactionId={latestEventId} selectedTransactionId={selectedTransactionId} reducedMotion={reducedMotion} heatmap={false} heldAccountIds={holdPreview?.heldAccountIds ?? emptyIds} interruptedTransferIds={holdPreview?.interruptedTransferIds ?? emptyIds} onCase={handleCase} onAccount={handleAccount} onContext={handleContext} onTransaction={handleTransaction} />
               </Suspense> : <KnowledgeGraph2D nodes={visibleGraph.nodes} links={visibleGraph.links} selectedTransactionId={selectedTransactionId} replayTransactionId={latestEventId} heldAccountIds={holdPreview?.heldAccountIds ?? emptyIds} interruptedTransferIds={holdPreview?.interruptedTransferIds ?? emptyIds} onCase={handleCase} onAccount={handleAccount} onContext={handleContext} onTransaction={handleTransaction} />}
-              <div className="graph-hud"><span className="hud-pulse" /> {heatmap ? 'RISK HEATMAP' : 'NETWORK ACTIVE'} <span className="hud-separator">/</span> {visibleGraph.links.filter(link => link.kind === 'transaction').length} TRANSFERS</div>
+              <div className="graph-hud"><span className="hud-pulse" /> NETWORK ACTIVE <span className="hud-separator">/</span> {visibleGraph.links.filter(link => link.kind === 'transaction').length} TRANSFERS</div>
               <div className="graph-instruction"><span className="mouse-glyph">⌖</span> Drag to orbit <b>·</b> Scroll to zoom <b>·</b> Select a case or account to explore</div>
               {snapshot && <GraphInspector activeCase={activeCase} account={focusedAccount} accounts={visibleAccounts} transactions={transactions} selectedTransaction={selectedTransaction} snapshot={snapshot} onSelectAccount={handleAccount} />}
             </> : <>
@@ -480,7 +474,6 @@ export default function App() {
           <section className="model-scoreboard" aria-label="Current model scores"><div className="scoreboard-intro"><span className="eyebrow">CURRENT TRANSACTION SCORECARD</span><b>{selectedTransaction?.transaction_id ?? 'Select a transfer'}</b><small>Component evidence for the current selection</small></div><div><span>OVERALL RISK</span><strong>{selectedDecision?.riskScore?.toFixed(1) ?? '—'}<small>/ 100</small></strong><p>Prioritization score</p></div><div><span>BEHAVIOUR ANOMALY</span><strong>{selectedDecision?.behaviourScore?.toFixed(3) ?? '—'}<small>/ 1</small></strong><p>Historical account unusualness</p></div><div><span>IBM GIN RELATIONAL</span><strong>{selectedDecision?.ginScore?.toFixed(3) ?? '—'}<small>/ 1</small></strong><p>Learned network evidence</p></div><div><span>ENTITY RISK</span><strong>{selectedEntityRisk?.riskScore?.toFixed(1) ?? '—'}<small>/ 100</small></strong><p>Recent account aggregate</p></div></section>
           <div className="subpage-columns risk-columns"><div className="stacked-cards"><section className="subpage-card"><span className="eyebrow">DECISION EXPLANATION</span><h2>{selectedTransaction ? `Transaction · ${selectedTransaction.transaction_id}` : 'Transaction risk'}</h2><Risk risk={selectedDecision} /></section><section className="subpage-card"><span className="eyebrow">ENTITY RISK</span><h2>{focusedAccountId || 'Select an account on the graph'}</h2><Risk risk={selectedEntityRisk} /></section></div><div className="analytics-stack persistent-analytics">{snapshot && <Models models={snapshot.intelligence.models} expanded />}<CaseEvaluation expanded />{snapshot && <EnrichmentControls context={snapshot.intelligence.enrichment} />}</div></div></section>}
 
-        {activePage === 'intervention' && <section className="subpage" aria-label="Intervention comparison"><div className="subpage-heading"><div><span className="eyebrow">OBSERVED-ROUTE DISRUPTION</span><h1>Intervention comparison</h1><p>Evaluate a proposed account hold against the observed network without taking action.</p></div><button className="button-outline" onClick={() => setActivePage('network')}>Return to graph</button></div><section className="intervention-landing"><div className="intervention-intro-card"><span className="eyebrow">SIMULATION SCOPE</span><h2>{activeCase ? activeCase.case_id : 'Choose a case from the graph'}</h2><p>{activeCase ? `${activeCase.typology} · ${activeCase.entity_count} involved accounts · ${activeCase.transaction_count} linked transfers` : 'A case supplies the observed accounts and transfers for a hold comparison.'}</p><ul><li>Compare one account with an additional group hold.</li><li>See interrupted links, unreachable downstream accounts, and remaining routes.</li><li>Graph markings are previews only; no payment or hold is executed.</li></ul><button className="play-button" disabled={!activeCase || !snapshot || !canControl} onClick={() => setShowWhatIf(true)}><GitCompareArrows size={14} /> Compare observed routes</button></div><div className="intervention-guide"><span className="eyebrow">READING A RESULT</span><div><b>Held accounts</b><span>The selected containment set.</span></div><div><b>Interrupted transfers</b><span>Observed links blocked by that set.</span></div><div><b>Remaining alternate routes</b><span>Witnesses that still reach downstream accounts.</span></div><div><b>Directly touched accounts</b><span>Immediate counterparties of held accounts.</span></div></div></section></section>}
       </main>
 
       <footer className="app-footer"><span>{snapshot?.dataset ?? 'Waiting for backend snapshot'} <b>·</b> Scores prioritize investigation; they do not establish fraud</span><button onClick={() => setShowAnalytics(true)}><BarChart3 size={12} /> Models & evaluation</button><span className="footer-version">v1.0.0</span></footer>
