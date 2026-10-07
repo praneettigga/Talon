@@ -1,15 +1,16 @@
 # Talon — Financial Fraud Intelligence
 
 Talon is being built to reconstruct explainable laundering cases from transaction networks.
-Milestones 1–5 provide validated data preparation, deterministic replay, event-time
+Milestones 1–6 provide validated data preparation, deterministic replay, event-time
 features, supported structural rules, evidence-backed cases, learned risk scoring,
-and observed-route intervention comparisons with labelled synthetic context.
-Case-reconstruction evaluation remains for milestone 6.
+observed-route intervention comparisons with labelled synthetic context, and separate
+temporal transaction-detection and case-reconstruction evaluations.
 
 ## Requirements and setup
 
 - Node.js 22.12+ and npm (verified locally with Node 26).
-- Python 3.11+ available as `python`. The worker and model commands prefer `.venv/bin/python`
+- Python 3.12+ for the pinned model/evaluation dependencies, available as `python`.
+  Data preparation and structural rules also support Python 3.11. The worker and model commands prefer `.venv/bin/python`
   when present; `TALON_PYTHON` overrides it. Model dependencies are pinned in `backend/`.
   Data preparation and structural rules can still run with only the standard library.
 - Kaggle legacy API credentials for automated download, or a manually downloaded Kaggle ZIP.
@@ -85,6 +86,7 @@ truth metadata for preparation/evaluation, not runtime prediction features.
 npm run models:prepare
 npm run models:train
 npm run models:replay
+npm run evaluation:cases
 npm run dev
 ```
 
@@ -156,6 +158,7 @@ Express listens on http://127.0.0.1:3001; Vite proxies `/v1` locally:
 | `GET /v1/entities/:id/risk` | Entity risk, latest transaction score, behaviour/GIN outputs, XGBoost contributions, prior-event features and evidence |
 | `GET /v1/events/:id/features` | Immutable feature and model decision snapshot for an already observed event |
 | `GET /v1/evaluation` | Frozen split, source provenance, model settings, calibration, thresholds and transaction metrics; 503 when models are unavailable |
+| `GET /v1/evaluation/cases` | Separate frozen structural case-reconstruction metrics, matching details and provenance; 503 when missing or stale |
 | `POST /v1/interventions/simulate` | Compare account holds against one frozen observed case graph; executes no hold |
 
 Invalid controls return 400; starting a completed replay returns 409 until reset. Missing
@@ -223,8 +226,8 @@ as suspects. The severity view exposes the exact inputs and observation time.
 
 The original 220-event sample yields five correlated cases and 18 structural findings. This
 is a reproducible demo result, not precision/recall evaluation. Some selected typologies do
-not match the deliberately narrow v1 rules; evaluation and broader validated coverage remain
-for later work.
+not match the deliberately narrow v1 rules. Milestone 6 evaluates reconstruction separately
+on the frozen modeling test window; broader rule coverage remains future work.
 
 ## Milestone 4 learned scoring
 
@@ -379,6 +382,62 @@ The milestone 4 metrics do not evaluate these synthetic signals. Missing, stale 
 enrichment produces an explicit unavailable context state while structural intelligence and
 models remain usable. `TALON_ENRICHMENT_FILE` selects an alternate CSV.
 
+## Milestone 6 case reconstruction and acceptance
+
+Run `npm run evaluation:cases` after `models:prepare`, then restart the API. The command
+reconstructs cases from all 12,423 prepared source events in order, using the same live
+finding-growth and correlation code. It omits model inference because this evaluation
+measures **structural reconstruction, including LOW cases**, rather than review-alert
+precision. Earlier events provide warmup; the test window remains **September 9–11, 2022**
+(end exclusive), exactly as frozen in milestone 4. No thresholds or detectors are tuned on
+the test results. Transaction precision/recall and the learned artifacts remain unchanged.
+
+The generated [case evaluation report](docs/data/milestone6-evaluation.json) records input,
+source-file, detector/evaluator-code and transaction-report checksums, exclusions, matching
+pairs, unmatched cases, and missed attempts. The API checks schema, metric arithmetic,
+one-to-one matching, source hashes, code hashes, the frozen split, and the local evaluation
+input hash when present. Missing or stale reports are explicitly unavailable; they do not
+disable replay or learned scoring. The **Case reconstruction** panel shows overall metrics,
+supported-typology metrics and the matching method, separately from transaction evaluation
+and the curated demonstration.
+
+The frozen run matches **34 of 191 detected cases** to **66 eligible attempts**:
+case precision **17.8%**, recall **51.5%**, and mean matched Jaccard **0.537**.
+The low precision exposes extra structural cases and campaign fragmentation/merging;
+these figures include LOW cases and do not replace the review-gate transaction metrics.
+
+Detected cases and eligible ground-truth attempts are projected onto test-window transfers.
+An attempt is eligible only if its typology is enabled and its entire source transaction set
+was present by the evaluation end. Boundary-truncated attempts are excluded. RANDOM and
+unsupported attempts are excluded from named-rule reconstruction; their transactions remain
+in milestone 4's total transaction evaluation. Their transfers are excluded from reconstruction
+metrics unless also part of an eligible supported attempt. Benign test transfers and ungrouped
+positives remain in the reconstruction population, so unrelated detected structures can count
+as unmatched cases.
+
+Any nonempty transaction overlap permits a match. A deterministic maximum-cardinality
+one-to-one assignment first maximizes the number matched, then total Jaccard overlap.
+Precision is matched cases / detected cases; recall is matched attempts / eligible attempts.
+Jaccard is intersection / union of the two projected transaction sets, averaged over matches.
+Duplicate case fragments cannot inflate recall, and one merged case cannot recover several
+attempts in the overall count. Per-typology matching runs independently using only that
+typology's evidence, so those counts are not additive. Empty denominators display unavailable.
+These are bounded, case-enriched synthetic-subset results, not full-benchmark or deployment
+estimates; a loose overlap match is not exact campaign recovery.
+
+Acceptance tests cover prior-only features and graphs, frozen calibration/threshold provenance,
+immutable decision prefixes, repeatable reset and intervention results, and unavailable worker,
+model and evaluation states. Explicit artificial controls verify that a high-value anomaly alone
+creates no case, payroll-like fan-out stays LOW without corroboration, and a supported structure
+grows into one evidence-backed case when corroborated. These controls test prioritisation logic;
+they are not extra benchmark results. Source accounts remain unassessed for suspicion.
+Offline reconstruction is compared against the full live detector at every prefix of the real
+demo and on artificial merging/expiry streams.
+Milestone 6 also fixes partial-window expiry creating a fresh finding on an unrelated
+transfer: new evidence must include the arriving transfer. Expiry alone cannot grow a case.
+See [the acceptance and local rehearsal guide](docs/milestone6-acceptance.md) for the
+complete preparation, verification, demo and recovery sequence.
+
 ```bash
 npm test
 npm run check
@@ -398,8 +457,9 @@ Set `TALON_UI_URL` if Vite uses a different port. Screenshots go to gitignored
 `frontend/test-results/`. The browser test resets the shared local replay and checks controls,
 pause/reload, full completion, identical reset events/features/cases, case evidence,
 investigation graphs, account selection, model contributions, frozen evaluation, synthetic
-context, single/group simulations, unchanged intelligence after simulation, and mobile layout.
-For milestone 5 browser acceptance, prepare model artifacts and the later replay first.
+context, single/group simulations, unchanged intelligence after simulation, separate case
+metrics, an explicitly unavailable case report, and mobile layout. For milestone 6 browser
+acceptance, prepare model artifacts, the later replay and case evaluation first.
 
 Tests create temporary, explicitly artificial records to verify validation and downloader
 failure handling. They are not demonstration data or benchmark results. The real milestone

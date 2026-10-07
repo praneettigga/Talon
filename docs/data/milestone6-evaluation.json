@@ -1,0 +1,1793 @@
+{
+  "byTypology": {
+    "BIPARTITE": {
+      "detectedCases": 1,
+      "groundTruthAttempts": 11,
+      "matched": 0,
+      "matches": [],
+      "meanMatchedJaccard": null,
+      "missedAttemptIds": [
+        "attempt:0234",
+        "attempt:0242",
+        "attempt:0245",
+        "attempt:0257",
+        "attempt:0265",
+        "attempt:0267",
+        "attempt:0268",
+        "attempt:0278",
+        "attempt:0287",
+        "attempt:0292",
+        "attempt:0303"
+      ],
+      "missedAttempts": 11,
+      "precision": 0.0,
+      "recall": 0.0,
+      "unmatchedCaseIds": [
+        "case-0018-58e71b"
+      ],
+      "unmatchedDetected": 1
+    },
+    "CYCLE": {
+      "detectedCases": 15,
+      "groundTruthAttempts": 11,
+      "matched": 10,
+      "matches": [
+        {
+          "attemptId": "attempt:0193",
+          "attemptTransactions": 2,
+          "caseId": "case-0001-6f48d7",
+          "caseTransactions": 8,
+          "jaccard": 0.25,
+          "overlap": 2,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0276",
+          "attemptTransactions": 1,
+          "caseId": "case-0064-b5a3e1",
+          "caseTransactions": 3,
+          "jaccard": 0.3333333333333333,
+          "overlap": 1,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0218",
+          "attemptTransactions": 5,
+          "caseId": "case-0099-c8a5b1",
+          "caseTransactions": 5,
+          "jaccard": 1.0,
+          "overlap": 5,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0182",
+          "attemptTransactions": 2,
+          "caseId": "case-0987-8a6c80",
+          "caseTransactions": 2,
+          "jaccard": 1.0,
+          "overlap": 2,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0230",
+          "attemptTransactions": 1,
+          "caseId": "case-1135-9488aa",
+          "caseTransactions": 1,
+          "jaccard": 1.0,
+          "overlap": 1,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0223",
+          "attemptTransactions": 1,
+          "caseId": "case-1776-1402cd",
+          "caseTransactions": 1,
+          "jaccard": 1.0,
+          "overlap": 1,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0167",
+          "attemptTransactions": 1,
+          "caseId": "case-2217-237370",
+          "caseTransactions": 1,
+          "jaccard": 1.0,
+          "overlap": 1,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0246",
+          "attemptTransactions": 1,
+          "caseId": "case-2497-83fcf1",
+          "caseTransactions": 1,
+          "jaccard": 1.0,
+          "overlap": 1,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0249",
+          "attemptTransactions": 4,
+          "caseId": "case-2642-523a50",
+          "caseTransactions": 4,
+          "jaccard": 1.0,
+          "overlap": 4,
+          "typology": "CYCLE"
+        },
+        {
+          "attemptId": "attempt:0335",
+          "attemptTransactions": 2,
+          "caseId": "case-3358-adb63c",
+          "caseTransactions": 2,
+          "jaccard": 1.0,
+          "overlap": 2,
+          "typology": "CYCLE"
+        }
+      ],
+      "meanMatchedJaccard": 0.8583333333333334,
+      "missedAttemptIds": [
+        "attempt:0263"
+      ],
+      "missedAttempts": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.9090909090909091,
+      "unmatchedCaseIds": [
+        "case-0018-58e71b",
+        "case-0094-74fae8",
+        "case-0918-d39ce1",
+        "case-2684-0a3069",
+        "case-3329-7244e5"
+      ],
+      "unmatchedDetected": 5
+    },
+    "FAN-IN": {
+      "detectedCases": 82,
+      "groundTruthAttempts": 6,
+      "matched": 4,
+      "matches": [
+        {
+          "attemptId": "attempt:0187",
+          "attemptTransactions": 4,
+          "caseId": "case-0001-6f48d7",
+          "caseTransactions": 50,
+          "jaccard": 0.08,
+          "overlap": 4,
+          "typology": "FAN-IN"
+        },
+        {
+          "attemptId": "attempt:0289",
+          "attemptTransactions": 1,
+          "caseId": "case-0018-58e71b",
+          "caseTransactions": 11,
+          "jaccard": 0.09090909090909091,
+          "overlap": 1,
+          "typology": "FAN-IN"
+        },
+        {
+          "attemptId": "attempt:0211",
+          "attemptTransactions": 4,
+          "caseId": "case-1366-b9a480",
+          "caseTransactions": 4,
+          "jaccard": 1.0,
+          "overlap": 4,
+          "typology": "FAN-IN"
+        },
+        {
+          "attemptId": "attempt:0286",
+          "attemptTransactions": 1,
+          "caseId": "case-3636-6598fd",
+          "caseTransactions": 1,
+          "jaccard": 1.0,
+          "overlap": 1,
+          "typology": "FAN-IN"
+        }
+      ],
+      "meanMatchedJaccard": 0.5427272727272727,
+      "missedAttemptIds": [
+        "attempt:0310",
+        "attempt:0311"
+      ],
+      "missedAttempts": 2,
+      "precision": 0.04878048780487805,
+      "recall": 0.6666666666666666,
+      "unmatchedCaseIds": [
+        "case-0006-be5963",
+        "case-0008-69c074",
+        "case-0019-ed4c73",
+        "case-0020-9322a4",
+        "case-0050-4a8372",
+        "case-0053-afc33a",
+        "case-0084-4f1b08",
+        "case-0094-74fae8",
+        "case-0100-33e444",
+        "case-0101-c634aa",
+        "case-0116-2a239e",
+        "case-0130-40d0d7",
+        "case-0152-e1c6e4",
+        "case-0169-4bee8b",
+        "case-0192-7e7008",
+        "case-0207-af79c8",
+        "case-0217-bc9676",
+        "case-0292-d4363b",
+        "case-0296-3992b0",
+        "case-0323-f49956",
+        "case-0347-b8d922",
+        "case-0386-3741f8",
+        "case-0494-fac9b7",
+        "case-0498-1f9c55",
+        "case-0524-1b696a",
+        "case-0531-6564ba",
+        "case-0574-89bd7d",
+        "case-0594-858d4a",
+        "case-0668-7c0c4e",
+        "case-0688-f28678",
+        "case-0750-51e7ad",
+        "case-0921-7bf718",
+        "case-0968-4fb088",
+        "case-0987-8a6c80",
+        "case-1047-cb9c97",
+        "case-1072-650f51",
+        "case-1180-a62636",
+        "case-1181-02e0b8",
+        "case-1182-937a39",
+        "case-1295-3825b6",
+        "case-1301-962b90",
+        "case-1363-db3e8d",
+        "case-1424-41b3d0",
+        "case-1425-5b85e3",
+        "case-1432-0a7b5d",
+        "case-1483-789932",
+        "case-1776-1402cd",
+        "case-1806-0115d5",
+        "case-2389-387d20",
+        "case-2422-7f24ea",
+        "case-2448-11d685",
+        "case-2454-4924e3",
+        "case-2457-d35f7e",
+        "case-2479-3c9cde",
+        "case-2497-83fcf1",
+        "case-2508-7b2b87",
+        "case-2603-d39dcf",
+        "case-2606-36868a",
+        "case-2642-523a50",
+        "case-2693-3e4001",
+        "case-2706-fce9e1",
+        "case-2802-a62720",
+        "case-2927-937e5b",
+        "case-2961-bb82fe",
+        "case-3016-3c547e",
+        "case-3022-ffb203",
+        "case-3045-b30ffe",
+        "case-3262-7841ae",
+        "case-3290-b2918b",
+        "case-3358-adb63c",
+        "case-3360-f0071d",
+        "case-3377-0afafb",
+        "case-3588-a20ccf",
+        "case-3607-2ee08f",
+        "case-3650-fb39fd",
+        "case-3680-f4391c",
+        "case-3750-2856b4",
+        "case-3787-8a31e1"
+      ],
+      "unmatchedDetected": 78
+    },
+    "FAN-OUT": {
+      "detectedCases": 137,
+      "groundTruthAttempts": 9,
+      "matched": 5,
+      "matches": [
+        {
+          "attemptId": "attempt:0219",
+          "attemptTransactions": 4,
+          "caseId": "case-0001-6f48d7",
+          "caseTransactions": 797,
+          "jaccard": 0.005018820577164366,
+          "overlap": 4,
+          "typology": "FAN-OUT"
+        },
+        {
+          "attemptId": "attempt:0212",
+          "attemptTransactions": 5,
+          "caseId": "case-0006-be5963",
+          "caseTransactions": 17,
+          "jaccard": 0.29411764705882354,
+          "overlap": 5,
+          "typology": "FAN-OUT"
+        },
+        {
+          "attemptId": "attempt:0216",
+          "attemptTransactions": 4,
+          "caseId": "case-0018-58e71b",
+          "caseTransactions": 18,
+          "jaccard": 0.2222222222222222,
+          "overlap": 4,
+          "typology": "FAN-OUT"
+        },
+        {
+          "attemptId": "attempt:0199",
+          "attemptTransactions": 1,
+          "caseId": "case-1047-cb9c97",
+          "caseTransactions": 1,
+          "jaccard": 1.0,
+          "overlap": 1,
+          "typology": "FAN-OUT"
+        },
+        {
+          "attemptId": "attempt:0208",
+          "attemptTransactions": 2,
+          "caseId": "case-1159-94fb8a",
+          "caseTransactions": 2,
+          "jaccard": 1.0,
+          "overlap": 2,
+          "typology": "FAN-OUT"
+        }
+      ],
+      "meanMatchedJaccard": 0.504271737971642,
+      "missedAttemptIds": [
+        "attempt:0237",
+        "attempt:0243",
+        "attempt:0312",
+        "attempt:0318"
+      ],
+      "missedAttempts": 4,
+      "precision": 0.0364963503649635,
+      "recall": 0.5555555555555556,
+      "unmatchedCaseIds": [
+        "case-0002-672797",
+        "case-0005-f97e74",
+        "case-0008-69c074",
+        "case-0016-813200",
+        "case-0019-ed4c73",
+        "case-0020-9322a4",
+        "case-0024-8b7de7",
+        "case-0028-8f4f4f",
+        "case-0045-d10d5c",
+        "case-0047-b84d40",
+        "case-0050-4a8372",
+        "case-0053-afc33a",
+        "case-0060-1381be",
+        "case-0066-f97eab",
+        "case-0070-d276b4",
+        "case-0073-1de0f0",
+        "case-0078-f85a48",
+        "case-0084-4f1b08",
+        "case-0094-74fae8",
+        "case-0099-c8a5b1",
+        "case-0100-33e444",
+        "case-0101-c634aa",
+        "case-0109-575548",
+        "case-0119-44ea11",
+        "case-0129-f25256",
+        "case-0152-e1c6e4",
+        "case-0155-25596f",
+        "case-0169-4bee8b",
+        "case-0170-f539b4",
+        "case-0184-26aea4",
+        "case-0186-a1a1fd",
+        "case-0192-7e7008",
+        "case-0207-af79c8",
+        "case-0212-74e602",
+        "case-0217-bc9676",
+        "case-0222-9eb6f5",
+        "case-0231-b88282",
+        "case-0287-20ae78",
+        "case-0292-d4363b",
+        "case-0316-e60cb3",
+        "case-0321-f86e57",
+        "case-0365-f6420a",
+        "case-0405-281d23",
+        "case-0436-911200",
+        "case-0457-72e9a5",
+        "case-0490-f044fc",
+        "case-0498-1f9c55",
+        "case-0512-8453eb",
+        "case-0513-a98f6b",
+        "case-0515-2639c4",
+        "case-0518-c3991c",
+        "case-0523-511843",
+        "case-0555-a39270",
+        "case-0576-cd0aef",
+        "case-0593-c7cc6b",
+        "case-0614-180ea3",
+        "case-0645-28e0d5",
+        "case-0658-c94aa0",
+        "case-0719-6e5fae",
+        "case-0730-a5f98f",
+        "case-0777-d28ccc",
+        "case-0829-f6e65f",
+        "case-0902-75aa79",
+        "case-1022-35c7a8",
+        "case-1040-364f40",
+        "case-1072-650f51",
+        "case-1082-b1b515",
+        "case-1123-abe1bc",
+        "case-1132-a13a37",
+        "case-1135-9488aa",
+        "case-1283-62ffb7",
+        "case-1301-962b90",
+        "case-1302-905c5b",
+        "case-1326-a5bc4a",
+        "case-1366-b9a480",
+        "case-1397-7580eb",
+        "case-1425-5b85e3",
+        "case-1448-750bef",
+        "case-1482-4fbed8",
+        "case-1483-789932",
+        "case-1487-08a94d",
+        "case-1623-ce385a",
+        "case-1776-1402cd",
+        "case-1806-0115d5",
+        "case-1924-d8eb22",
+        "case-2217-237370",
+        "case-2241-ba5d36",
+        "case-2376-110946",
+        "case-2380-218159",
+        "case-2418-23c290",
+        "case-2422-7f24ea",
+        "case-2451-f10c5a",
+        "case-2492-403ab6",
+        "case-2512-f5b9c3",
+        "case-2577-884b94",
+        "case-2587-515256",
+        "case-2602-f6e406",
+        "case-2604-f76f6f",
+        "case-2639-af3bc5",
+        "case-2642-523a50",
+        "case-2665-2b950b",
+        "case-2681-de8014",
+        "case-2706-fce9e1",
+        "case-2711-e35fa5",
+        "case-2746-4b6578",
+        "case-2781-6e6b12",
+        "case-2822-49bb87",
+        "case-2927-937e5b",
+        "case-3016-3c547e",
+        "case-3083-23d63a",
+        "case-3089-d41599",
+        "case-3091-3bebfe",
+        "case-3129-af2bab",
+        "case-3147-0b9b0d",
+        "case-3155-e4a697",
+        "case-3204-ed9830",
+        "case-3227-24e69b",
+        "case-3267-846f3f",
+        "case-3358-adb63c",
+        "case-3365-924807",
+        "case-3377-0afafb",
+        "case-3441-0aeb06",
+        "case-3444-b5eb37",
+        "case-3451-eb03c9",
+        "case-3484-f3407e",
+        "case-3572-a8779c",
+        "case-3636-6598fd",
+        "case-3751-d29bc9",
+        "case-3765-0c426b",
+        "case-3785-559d14",
+        "case-3789-4438e6",
+        "case-3823-9ba700"
+      ],
+      "unmatchedDetected": 132
+    },
+    "GATHER-SCATTER": {
+      "detectedCases": 16,
+      "groundTruthAttempts": 10,
+      "matched": 6,
+      "matches": [
+        {
+          "attemptId": "attempt:0047",
+          "attemptTransactions": 2,
+          "caseId": "case-0001-6f48d7",
+          "caseTransactions": 725,
+          "jaccard": 0.002758620689655172,
+          "overlap": 2,
+          "typology": "GATHER-SCATTER"
+        },
+        {
+          "attemptId": "attempt:0141",
+          "attemptTransactions": 1,
+          "caseId": "case-0018-58e71b",
+          "caseTransactions": 11,
+          "jaccard": 0.09090909090909091,
+          "overlap": 1,
+          "typology": "GATHER-SCATTER"
+        },
+        {
+          "attemptId": "attempt:0092",
+          "attemptTransactions": 5,
+          "caseId": "case-0101-c634aa",
+          "caseTransactions": 6,
+          "jaccard": 0.8333333333333334,
+          "overlap": 5,
+          "typology": "GATHER-SCATTER"
+        },
+        {
+          "attemptId": "attempt:0082",
+          "attemptTransactions": 3,
+          "caseId": "case-0169-4bee8b",
+          "caseTransactions": 4,
+          "jaccard": 0.75,
+          "overlap": 3,
+          "typology": "GATHER-SCATTER"
+        },
+        {
+          "attemptId": "attempt:0080",
+          "attemptTransactions": 4,
+          "caseId": "case-0192-7e7008",
+          "caseTransactions": 4,
+          "jaccard": 1.0,
+          "overlap": 4,
+          "typology": "GATHER-SCATTER"
+        },
+        {
+          "attemptId": "attempt:0094",
+          "attemptTransactions": 1,
+          "caseId": "case-0231-b88282",
+          "caseTransactions": 1,
+          "jaccard": 1.0,
+          "overlap": 1,
+          "typology": "GATHER-SCATTER"
+        }
+      ],
+      "meanMatchedJaccard": 0.6128335074886799,
+      "missedAttemptIds": [
+        "attempt:0031",
+        "attempt:0183",
+        "attempt:0301",
+        "attempt:0322"
+      ],
+      "missedAttempts": 4,
+      "precision": 0.375,
+      "recall": 0.6,
+      "unmatchedCaseIds": [
+        "case-0094-74fae8",
+        "case-0099-c8a5b1",
+        "case-0186-a1a1fd",
+        "case-0217-bc9676",
+        "case-0436-911200",
+        "case-0576-cd0aef",
+        "case-1040-364f40",
+        "case-1482-4fbed8",
+        "case-1623-ce385a",
+        "case-3016-3c547e"
+      ],
+      "unmatchedDetected": 10
+    },
+    "SCATTER-GATHER": {
+      "detectedCases": 5,
+      "groundTruthAttempts": 6,
+      "matched": 4,
+      "matches": [
+        {
+          "attemptId": "attempt:0205",
+          "attemptTransactions": 10,
+          "caseId": "case-0001-6f48d7",
+          "caseTransactions": 10,
+          "jaccard": 1.0,
+          "overlap": 10,
+          "typology": "SCATTER-GATHER"
+        },
+        {
+          "attemptId": "attempt:0170",
+          "attemptTransactions": 2,
+          "caseId": "case-0101-c634aa",
+          "caseTransactions": 2,
+          "jaccard": 1.0,
+          "overlap": 2,
+          "typology": "SCATTER-GATHER"
+        },
+        {
+          "attemptId": "attempt:0213",
+          "attemptTransactions": 8,
+          "caseId": "case-1180-a62636",
+          "caseTransactions": 8,
+          "jaccard": 1.0,
+          "overlap": 8,
+          "typology": "SCATTER-GATHER"
+        },
+        {
+          "attemptId": "attempt:0227",
+          "attemptTransactions": 4,
+          "caseId": "case-1301-962b90",
+          "caseTransactions": 4,
+          "jaccard": 1.0,
+          "overlap": 4,
+          "typology": "SCATTER-GATHER"
+        }
+      ],
+      "meanMatchedJaccard": 1.0,
+      "missedAttemptIds": [
+        "attempt:0189",
+        "attempt:0336"
+      ],
+      "missedAttempts": 2,
+      "precision": 0.8,
+      "recall": 0.6666666666666666,
+      "unmatchedCaseIds": [
+        "case-0018-58e71b"
+      ],
+      "unmatchedDetected": 1
+    },
+    "STACK": {
+      "detectedCases": 25,
+      "groundTruthAttempts": 13,
+      "matched": 4,
+      "matches": [
+        {
+          "attemptId": "attempt:0186",
+          "attemptTransactions": 3,
+          "caseId": "case-0099-c8a5b1",
+          "caseTransactions": 7,
+          "jaccard": 0.1111111111111111,
+          "overlap": 1,
+          "typology": "STACK"
+        },
+        {
+          "attemptId": "attempt:0146",
+          "attemptTransactions": 1,
+          "caseId": "case-1082-b1b515",
+          "caseTransactions": 2,
+          "jaccard": 0.5,
+          "overlap": 1,
+          "typology": "STACK"
+        },
+        {
+          "attemptId": "attempt:0198",
+          "attemptTransactions": 1,
+          "caseId": "case-1425-5b85e3",
+          "caseTransactions": 1,
+          "jaccard": 1.0,
+          "overlap": 1,
+          "typology": "STACK"
+        },
+        {
+          "attemptId": "attempt:0195",
+          "attemptTransactions": 2,
+          "caseId": "case-2606-36868a",
+          "caseTransactions": 2,
+          "jaccard": 0.3333333333333333,
+          "overlap": 1,
+          "typology": "STACK"
+        }
+      ],
+      "meanMatchedJaccard": 0.4861111111111111,
+      "missedAttemptIds": [
+        "attempt:0142",
+        "attempt:0145",
+        "attempt:0176",
+        "attempt:0191",
+        "attempt:0210",
+        "attempt:0226",
+        "attempt:0235",
+        "attempt:0261",
+        "attempt:0328"
+      ],
+      "missedAttempts": 9,
+      "precision": 0.16,
+      "recall": 0.3076923076923077,
+      "unmatchedCaseIds": [
+        "case-0001-6f48d7",
+        "case-0006-be5963",
+        "case-0018-58e71b",
+        "case-0020-9322a4",
+        "case-0046-37f773",
+        "case-0053-afc33a",
+        "case-0060-1381be",
+        "case-0101-c634aa",
+        "case-0169-4bee8b",
+        "case-0222-9eb6f5",
+        "case-0513-a98f6b",
+        "case-0531-6564ba",
+        "case-0785-cf1d75",
+        "case-0987-8a6c80",
+        "case-1072-650f51",
+        "case-1135-9488aa",
+        "case-1623-ce385a",
+        "case-1776-1402cd",
+        "case-1806-0115d5",
+        "case-2642-523a50",
+        "case-2825-6b0230"
+      ],
+      "unmatchedDetected": 21
+    }
+  },
+  "codeHashes": {
+    "backend/python/engine.py": "0e77d4f12f76ec406256ccd010d1b3ab37eb1cac4c777bec9345561eeb1af8dd",
+    "backend/python/evaluate_cases.py": "27051abac9b3ebdb79a1b4d92a1f551ab8e46017f3546d7f393854f683030e2a",
+    "backend/python/signals.py": "63565b293e91a135d5d22e5543c017553cfaf1559426e3da7c58153b8abbcc6d"
+  },
+  "dataset": "IBM AMLWorld HI-Small synthetic AML benchmark",
+  "datasetSha256": "99177d0ce43134a9088b9480eb970f733840f96a45596f30ec5347d8fa05bf6d",
+  "enabledTypologies": [
+    "BIPARTITE",
+    "CYCLE",
+    "FAN-IN",
+    "FAN-OUT",
+    "GATHER-SCATTER",
+    "SCATTER-GATHER",
+    "STACK"
+  ],
+  "limitations": [
+    "Case-enriched bounded synthetic subset; not a complete HI-Small benchmark.",
+    "Overlap indicates partial reconstruction, not exact campaign recovery; inspect Jaccard and merge/fragmentation errors.",
+    "Per-typology counts are not additive: a case can contain multiple typologies.",
+    "Unsupported/RANDOM and ungrouped positives remain in the unchanged transaction evaluation.",
+    "Labels and pattern attempts are loaded only by this offline evaluator, never by runtime inference."
+  ],
+  "matching": "Any nonempty test-transaction overlap; maximum-cardinality one-to-one assignment, then maximum total Jaccard. No test-tuned overlap threshold.",
+  "overall": {
+    "detectedCases": 191,
+    "groundTruthAttempts": 66,
+    "matched": 34,
+    "matches": [
+      {
+        "attemptId": "attempt:0205",
+        "attemptTransactions": 10,
+        "caseId": "case-0001-6f48d7",
+        "caseTransactions": 856,
+        "jaccard": 0.011682242990654205,
+        "overlap": 10,
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "attemptId": "attempt:0212",
+        "attemptTransactions": 5,
+        "caseId": "case-0006-be5963",
+        "caseTransactions": 19,
+        "jaccard": 0.2631578947368421,
+        "overlap": 5,
+        "typology": "FAN-OUT"
+      },
+      {
+        "attemptId": "attempt:0216",
+        "attemptTransactions": 4,
+        "caseId": "case-0018-58e71b",
+        "caseTransactions": 21,
+        "jaccard": 0.19047619047619047,
+        "overlap": 4,
+        "typology": "FAN-OUT"
+      },
+      {
+        "attemptId": "attempt:0145",
+        "attemptTransactions": 1,
+        "caseId": "case-0064-b5a3e1",
+        "caseTransactions": 3,
+        "jaccard": 0.3333333333333333,
+        "overlap": 1,
+        "typology": "STACK"
+      },
+      {
+        "attemptId": "attempt:0292",
+        "attemptTransactions": 1,
+        "caseId": "case-0094-74fae8",
+        "caseTransactions": 3,
+        "jaccard": 0.3333333333333333,
+        "overlap": 1,
+        "typology": "BIPARTITE"
+      },
+      {
+        "attemptId": "attempt:0218",
+        "attemptTransactions": 5,
+        "caseId": "case-0099-c8a5b1",
+        "caseTransactions": 8,
+        "jaccard": 0.625,
+        "overlap": 5,
+        "typology": "CYCLE"
+      },
+      {
+        "attemptId": "attempt:0092",
+        "attemptTransactions": 5,
+        "caseId": "case-0101-c634aa",
+        "caseTransactions": 8,
+        "jaccard": 0.625,
+        "overlap": 5,
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "attemptId": "attempt:0082",
+        "attemptTransactions": 3,
+        "caseId": "case-0169-4bee8b",
+        "caseTransactions": 7,
+        "jaccard": 0.42857142857142855,
+        "overlap": 3,
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "attemptId": "attempt:0080",
+        "attemptTransactions": 4,
+        "caseId": "case-0192-7e7008",
+        "caseTransactions": 5,
+        "jaccard": 0.8,
+        "overlap": 4,
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "attemptId": "attempt:0094",
+        "attemptTransactions": 1,
+        "caseId": "case-0231-b88282",
+        "caseTransactions": 1,
+        "jaccard": 1.0,
+        "overlap": 1,
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "attemptId": "attempt:0278",
+        "attemptTransactions": 7,
+        "caseId": "case-0287-20ae78",
+        "caseTransactions": 1,
+        "jaccard": 0.14285714285714285,
+        "overlap": 1,
+        "typology": "BIPARTITE"
+      },
+      {
+        "attemptId": "attempt:0176",
+        "attemptTransactions": 4,
+        "caseId": "case-0296-3992b0",
+        "caseTransactions": 1,
+        "jaccard": 0.25,
+        "overlap": 1,
+        "typology": "STACK"
+      },
+      {
+        "attemptId": "attempt:0226",
+        "attemptTransactions": 6,
+        "caseId": "case-0515-2639c4",
+        "caseTransactions": 1,
+        "jaccard": 0.16666666666666666,
+        "overlap": 1,
+        "typology": "STACK"
+      },
+      {
+        "attemptId": "attempt:0336",
+        "attemptTransactions": 2,
+        "caseId": "case-0918-d39ce1",
+        "caseTransactions": 4,
+        "jaccard": 0.5,
+        "overlap": 2,
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "attemptId": "attempt:0182",
+        "attemptTransactions": 2,
+        "caseId": "case-0987-8a6c80",
+        "caseTransactions": 3,
+        "jaccard": 0.6666666666666666,
+        "overlap": 2,
+        "typology": "CYCLE"
+      },
+      {
+        "attemptId": "attempt:0199",
+        "attemptTransactions": 1,
+        "caseId": "case-1047-cb9c97",
+        "caseTransactions": 2,
+        "jaccard": 0.5,
+        "overlap": 1,
+        "typology": "FAN-OUT"
+      },
+      {
+        "attemptId": "attempt:0146",
+        "attemptTransactions": 1,
+        "caseId": "case-1082-b1b515",
+        "caseTransactions": 4,
+        "jaccard": 0.25,
+        "overlap": 1,
+        "typology": "STACK"
+      },
+      {
+        "attemptId": "attempt:0230",
+        "attemptTransactions": 1,
+        "caseId": "case-1135-9488aa",
+        "caseTransactions": 1,
+        "jaccard": 1.0,
+        "overlap": 1,
+        "typology": "CYCLE"
+      },
+      {
+        "attemptId": "attempt:0208",
+        "attemptTransactions": 2,
+        "caseId": "case-1159-94fb8a",
+        "caseTransactions": 2,
+        "jaccard": 1.0,
+        "overlap": 2,
+        "typology": "FAN-OUT"
+      },
+      {
+        "attemptId": "attempt:0213",
+        "attemptTransactions": 8,
+        "caseId": "case-1180-a62636",
+        "caseTransactions": 9,
+        "jaccard": 0.8888888888888888,
+        "overlap": 8,
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "attemptId": "attempt:0227",
+        "attemptTransactions": 4,
+        "caseId": "case-1301-962b90",
+        "caseTransactions": 4,
+        "jaccard": 1.0,
+        "overlap": 4,
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "attemptId": "attempt:0211",
+        "attemptTransactions": 4,
+        "caseId": "case-1366-b9a480",
+        "caseTransactions": 5,
+        "jaccard": 0.8,
+        "overlap": 4,
+        "typology": "FAN-IN"
+      },
+      {
+        "attemptId": "attempt:0198",
+        "attemptTransactions": 1,
+        "caseId": "case-1425-5b85e3",
+        "caseTransactions": 1,
+        "jaccard": 1.0,
+        "overlap": 1,
+        "typology": "STACK"
+      },
+      {
+        "attemptId": "attempt:0223",
+        "attemptTransactions": 1,
+        "caseId": "case-1776-1402cd",
+        "caseTransactions": 3,
+        "jaccard": 0.3333333333333333,
+        "overlap": 1,
+        "typology": "CYCLE"
+      },
+      {
+        "attemptId": "attempt:0167",
+        "attemptTransactions": 1,
+        "caseId": "case-2217-237370",
+        "caseTransactions": 1,
+        "jaccard": 1.0,
+        "overlap": 1,
+        "typology": "CYCLE"
+      },
+      {
+        "attemptId": "attempt:0246",
+        "attemptTransactions": 1,
+        "caseId": "case-2497-83fcf1",
+        "caseTransactions": 2,
+        "jaccard": 0.5,
+        "overlap": 1,
+        "typology": "CYCLE"
+      },
+      {
+        "attemptId": "attempt:0245",
+        "attemptTransactions": 5,
+        "caseId": "case-2603-d39dcf",
+        "caseTransactions": 1,
+        "jaccard": 0.2,
+        "overlap": 1,
+        "typology": "BIPARTITE"
+      },
+      {
+        "attemptId": "attempt:0195",
+        "attemptTransactions": 2,
+        "caseId": "case-2606-36868a",
+        "caseTransactions": 2,
+        "jaccard": 0.3333333333333333,
+        "overlap": 1,
+        "typology": "STACK"
+      },
+      {
+        "attemptId": "attempt:0249",
+        "attemptTransactions": 4,
+        "caseId": "case-2642-523a50",
+        "caseTransactions": 6,
+        "jaccard": 0.6666666666666666,
+        "overlap": 4,
+        "typology": "CYCLE"
+      },
+      {
+        "attemptId": "attempt:0261",
+        "attemptTransactions": 2,
+        "caseId": "case-2684-0a3069",
+        "caseTransactions": 7,
+        "jaccard": 0.2857142857142857,
+        "overlap": 2,
+        "typology": "STACK"
+      },
+      {
+        "attemptId": "attempt:0335",
+        "attemptTransactions": 2,
+        "caseId": "case-3358-adb63c",
+        "caseTransactions": 3,
+        "jaccard": 0.6666666666666666,
+        "overlap": 2,
+        "typology": "CYCLE"
+      },
+      {
+        "attemptId": "attempt:0210",
+        "attemptTransactions": 2,
+        "caseId": "case-3451-eb03c9",
+        "caseTransactions": 1,
+        "jaccard": 0.5,
+        "overlap": 1,
+        "typology": "STACK"
+      },
+      {
+        "attemptId": "attempt:0286",
+        "attemptTransactions": 1,
+        "caseId": "case-3636-6598fd",
+        "caseTransactions": 2,
+        "jaccard": 0.5,
+        "overlap": 1,
+        "typology": "FAN-IN"
+      },
+      {
+        "attemptId": "attempt:0234",
+        "attemptTransactions": 2,
+        "caseId": "case-3751-d29bc9",
+        "caseTransactions": 1,
+        "jaccard": 0.5,
+        "overlap": 1,
+        "typology": "BIPARTITE"
+      }
+    ],
+    "meanMatchedJaccard": 0.5370984727716304,
+    "missedAttemptIds": [
+      "attempt:0031",
+      "attempt:0047",
+      "attempt:0141",
+      "attempt:0142",
+      "attempt:0170",
+      "attempt:0183",
+      "attempt:0186",
+      "attempt:0187",
+      "attempt:0189",
+      "attempt:0191",
+      "attempt:0193",
+      "attempt:0219",
+      "attempt:0235",
+      "attempt:0237",
+      "attempt:0242",
+      "attempt:0243",
+      "attempt:0257",
+      "attempt:0263",
+      "attempt:0265",
+      "attempt:0267",
+      "attempt:0268",
+      "attempt:0276",
+      "attempt:0287",
+      "attempt:0289",
+      "attempt:0301",
+      "attempt:0303",
+      "attempt:0310",
+      "attempt:0311",
+      "attempt:0312",
+      "attempt:0318",
+      "attempt:0322",
+      "attempt:0328"
+    ],
+    "missedAttempts": 32,
+    "precision": 0.17801047120418848,
+    "recall": 0.5151515151515151,
+    "unmatchedCaseIds": [
+      "case-0002-672797",
+      "case-0005-f97e74",
+      "case-0008-69c074",
+      "case-0016-813200",
+      "case-0019-ed4c73",
+      "case-0020-9322a4",
+      "case-0024-8b7de7",
+      "case-0028-8f4f4f",
+      "case-0045-d10d5c",
+      "case-0046-37f773",
+      "case-0047-b84d40",
+      "case-0050-4a8372",
+      "case-0053-afc33a",
+      "case-0060-1381be",
+      "case-0066-f97eab",
+      "case-0070-d276b4",
+      "case-0073-1de0f0",
+      "case-0078-f85a48",
+      "case-0084-4f1b08",
+      "case-0100-33e444",
+      "case-0109-575548",
+      "case-0116-2a239e",
+      "case-0119-44ea11",
+      "case-0129-f25256",
+      "case-0130-40d0d7",
+      "case-0152-e1c6e4",
+      "case-0155-25596f",
+      "case-0170-f539b4",
+      "case-0184-26aea4",
+      "case-0186-a1a1fd",
+      "case-0207-af79c8",
+      "case-0212-74e602",
+      "case-0217-bc9676",
+      "case-0222-9eb6f5",
+      "case-0292-d4363b",
+      "case-0316-e60cb3",
+      "case-0321-f86e57",
+      "case-0323-f49956",
+      "case-0347-b8d922",
+      "case-0365-f6420a",
+      "case-0386-3741f8",
+      "case-0405-281d23",
+      "case-0436-911200",
+      "case-0457-72e9a5",
+      "case-0490-f044fc",
+      "case-0494-fac9b7",
+      "case-0498-1f9c55",
+      "case-0512-8453eb",
+      "case-0513-a98f6b",
+      "case-0518-c3991c",
+      "case-0523-511843",
+      "case-0524-1b696a",
+      "case-0531-6564ba",
+      "case-0555-a39270",
+      "case-0574-89bd7d",
+      "case-0576-cd0aef",
+      "case-0593-c7cc6b",
+      "case-0594-858d4a",
+      "case-0614-180ea3",
+      "case-0645-28e0d5",
+      "case-0658-c94aa0",
+      "case-0668-7c0c4e",
+      "case-0688-f28678",
+      "case-0719-6e5fae",
+      "case-0730-a5f98f",
+      "case-0750-51e7ad",
+      "case-0777-d28ccc",
+      "case-0785-cf1d75",
+      "case-0829-f6e65f",
+      "case-0902-75aa79",
+      "case-0921-7bf718",
+      "case-0968-4fb088",
+      "case-1022-35c7a8",
+      "case-1040-364f40",
+      "case-1072-650f51",
+      "case-1123-abe1bc",
+      "case-1132-a13a37",
+      "case-1181-02e0b8",
+      "case-1182-937a39",
+      "case-1283-62ffb7",
+      "case-1295-3825b6",
+      "case-1302-905c5b",
+      "case-1326-a5bc4a",
+      "case-1363-db3e8d",
+      "case-1397-7580eb",
+      "case-1424-41b3d0",
+      "case-1432-0a7b5d",
+      "case-1448-750bef",
+      "case-1482-4fbed8",
+      "case-1483-789932",
+      "case-1487-08a94d",
+      "case-1623-ce385a",
+      "case-1806-0115d5",
+      "case-1924-d8eb22",
+      "case-2241-ba5d36",
+      "case-2376-110946",
+      "case-2380-218159",
+      "case-2389-387d20",
+      "case-2418-23c290",
+      "case-2422-7f24ea",
+      "case-2448-11d685",
+      "case-2451-f10c5a",
+      "case-2454-4924e3",
+      "case-2457-d35f7e",
+      "case-2479-3c9cde",
+      "case-2492-403ab6",
+      "case-2508-7b2b87",
+      "case-2512-f5b9c3",
+      "case-2577-884b94",
+      "case-2587-515256",
+      "case-2602-f6e406",
+      "case-2604-f76f6f",
+      "case-2639-af3bc5",
+      "case-2665-2b950b",
+      "case-2681-de8014",
+      "case-2693-3e4001",
+      "case-2706-fce9e1",
+      "case-2711-e35fa5",
+      "case-2746-4b6578",
+      "case-2781-6e6b12",
+      "case-2802-a62720",
+      "case-2822-49bb87",
+      "case-2825-6b0230",
+      "case-2927-937e5b",
+      "case-2961-bb82fe",
+      "case-3016-3c547e",
+      "case-3022-ffb203",
+      "case-3045-b30ffe",
+      "case-3083-23d63a",
+      "case-3089-d41599",
+      "case-3091-3bebfe",
+      "case-3129-af2bab",
+      "case-3147-0b9b0d",
+      "case-3155-e4a697",
+      "case-3204-ed9830",
+      "case-3227-24e69b",
+      "case-3262-7841ae",
+      "case-3267-846f3f",
+      "case-3290-b2918b",
+      "case-3329-7244e5",
+      "case-3360-f0071d",
+      "case-3365-924807",
+      "case-3377-0afafb",
+      "case-3441-0aeb06",
+      "case-3444-b5eb37",
+      "case-3484-f3407e",
+      "case-3572-a8779c",
+      "case-3588-a20ccf",
+      "case-3607-2ee08f",
+      "case-3650-fb39fd",
+      "case-3680-f4391c",
+      "case-3750-2856b4",
+      "case-3765-0c426b",
+      "case-3785-559d14",
+      "case-3787-8a31e1",
+      "case-3789-4438e6",
+      "case-3823-9ba700"
+    ],
+    "unmatchedDetected": 157
+  },
+  "population": {
+    "eligibleAttempts": 66,
+    "excludedAttempts": [
+      {
+        "id": "attempt:0116",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0119",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0148",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0156",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0177",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0179",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0181",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0192",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0196",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0206",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0215",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0221",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0222",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0228",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0229",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0231",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0232",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0236",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0239",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0240",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0247",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0251",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0252",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0253",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0254",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0255",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0256",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0258",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0259",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0260",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0262",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0264",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0266",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0269",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0270",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0271",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0272",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0273",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0274",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0281",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0282",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0283",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0284",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0285",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0288",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0290",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0291",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0293",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0294",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0295",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0296",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0297",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0298",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0299",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0300",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0302",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "BIPARTITE"
+      },
+      {
+        "id": "attempt:0304",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0305",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0306",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0307",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0308",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0309",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0313",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0314",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "BIPARTITE"
+      },
+      {
+        "id": "attempt:0315",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0316",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0317",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0319",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0320",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0321",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0323",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0324",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0325",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0326",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0327",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0329",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0331",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0332",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0333",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0334",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0337",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0338",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "BIPARTITE"
+      },
+      {
+        "id": "attempt:0339",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0340",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0341",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0342",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0344",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "BIPARTITE"
+      },
+      {
+        "id": "attempt:0345",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0346",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0347",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0348",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "BIPARTITE"
+      },
+      {
+        "id": "attempt:0349",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0350",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0351",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0352",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0353",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0354",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-OUT"
+      },
+      {
+        "id": "attempt:0356",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0357",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0359",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "STACK"
+      },
+      {
+        "id": "attempt:0360",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0361",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "SCATTER-GATHER"
+      },
+      {
+        "id": "attempt:0362",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0364",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      },
+      {
+        "id": "attempt:0365",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "GATHER-SCATTER"
+      },
+      {
+        "id": "attempt:0367",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "CYCLE"
+      },
+      {
+        "id": "attempt:0368",
+        "reason": "Incomplete at evaluation boundary or subset",
+        "typology": "FAN-IN"
+      },
+      {
+        "id": "attempt:0369",
+        "reason": "Unsupported typology",
+        "typology": "RANDOM"
+      }
+    ],
+    "excludedTransactions": 428,
+    "metricTransactions": 1893,
+    "testTransactions": 2321
+  },
+  "projection": "Replay the full earlier prefix as warmup; freeze at test end. Project detected cases and complete supported attempts onto test transactions. Exclude unsupported and incomplete campaign transactions from named-rule metrics unless also part of an eligible supported attempt. Per-typology matching is independent and uses only evidence of that typology.",
+  "replayedEvents": 12423,
+  "schemaVersion": 1,
+  "scope": "Structural case reconstruction, including LOW cases; not review-alert precision or learned-model case evaluation.",
+  "sourceFiles": {
+    "HI-Small_Patterns.txt": "2c546b5ce6009e73851f0139af053cf845f08bf92f3bc82fe1eb937dec2ef39b",
+    "HI-Small_Trans.csv": "b19d39f515523373f991b689c07e11e7b0b95c17a2c27a87d91584ae16c5b040",
+    "HI-Small_accounts.csv": "786808526e33cfc441212dd6fccda7edfc24172149bed59c6ef59b186836b014"
+  },
+  "sourceSha256": "b19d39f515523373f991b689c07e11e7b0b95c17a2c27a87d91584ae16c5b040",
+  "status": "ready",
+  "transactionEvaluationSha256": "84f9feef20af3a177f9a2c9a258adcc3baa8870acdaf6837d81a2acfea07d4cc",
+  "warmupEvents": 10102,
+  "window": {
+    "endExclusive": "2022-09-11T00:00:00",
+    "start": "2022-09-09T00:00:00"
+  }
+}

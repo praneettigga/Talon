@@ -50,9 +50,23 @@ test('real dataset replays, pauses, reconnects, completes, and resets identicall
   await expect(page.locator('.account-details .contributions')).toContainText('Margin contribution');
   const evaluation = await (await request.get('/v1/evaluation')).json();
   expect(evaluation.test.rows).toBeGreaterThan(0);
-  await page.locator('.evaluation summary').click();
-  await expect(page.locator('.evaluation')).toContainText('False-positive rate');
-  await expect(page.locator('.evaluation')).toContainText('not full-benchmark estimates');
+  const modelPanel = page.getByLabel('Model availability and evaluation');
+  await modelPanel.locator('.evaluation summary').click();
+  await expect(modelPanel.locator('.evaluation')).toContainText('False-positive rate');
+  await expect(modelPanel.locator('.evaluation')).toContainText('not full-benchmark estimates');
+  const caseResponse = await request.get('/v1/evaluation/cases');
+  expect(caseResponse.status()).toBe(200);
+  const caseEvaluation = await caseResponse.json();
+  const casePanel = page.getByLabel('Case reconstruction evaluation');
+  await expect(casePanel).toContainText('Case reconstruction · ready');
+  await expect(casePanel).toContainText('including LOW cases');
+  const format = (value: number | null) => value == null ? 'Unavailable' : `${(value * 100).toFixed(1)}%`;
+  await expect(casePanel.locator('.risk-metrics strong').nth(0)).toHaveText(format(caseEvaluation.report.overall.precision));
+  await expect(casePanel.locator('.risk-metrics strong').nth(1)).toHaveText(format(caseEvaluation.report.overall.recall));
+  await casePanel.getByText('Supported typologies and evaluation method', { exact: true }).click();
+  await expect(casePanel).toContainText('one-to-one assignment');
+  await expect(casePanel.locator('tbody tr')).toHaveCount(completed.intelligence.enabledTypologies.length);
+  await casePanel.screenshot({ path: 'test-results/case-evaluation-desktop.png' });
   await page.locator('.evidence-card details').first().locator('summary').click();
   const evidenceTransaction = page.locator('.transaction-links button').first();
   const evidenceTransactionId = await evidenceTransaction.textContent();
@@ -105,6 +119,7 @@ test('real dataset replays, pauses, reconnects, completes, and resets identicall
   expect(repeated.intelligence).toEqual(completed.intelligence);
   const simulatedAgain = await (await request.post('/v1/interventions/simulate', { data: simulationPayload })).json();
   expect(simulatedAgain).toEqual(simulated);
+  expect(await (await request.get('/v1/evaluation/cases')).json()).toEqual(caseEvaluation);
   await page.locator('.case-item').filter({ hasText: demonstratedCase.id }).click();
   await page.getByRole('button', { name: 'Compare holds', exact: true }).click();
   await expect(page.getByLabel('Hold comparison result')).toBeVisible();
@@ -113,4 +128,15 @@ test('real dataset replays, pauses, reconnects, completes, and resets identicall
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(errors).toEqual([]);
   await request.post('/v1/replay/control', { data: { action: 'reset' } });
+});
+
+test('missing case evaluation is explicit and leaves replay controls available', async ({ page }) => {
+  await page.route('**/v1/evaluation/cases', route => route.fulfill({ status: 503, contentType: 'application/json',
+    body: JSON.stringify({ status: 'unavailable', error: 'Artificial acceptance fixture: case evaluation unavailable' }) }));
+  await page.goto('/');
+  const panel = page.getByLabel('Case reconstruction evaluation');
+  await expect(panel).toContainText('Case reconstruction · unavailable');
+  await expect(panel.getByRole('alert')).toContainText('case evaluation unavailable');
+  await expect(panel.locator('.risk-metrics')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Start replay', exact: true })).toBeEnabled();
 });

@@ -47,7 +47,7 @@ export function Models({ models }: { models: ModelStatus }) {
           <tr><td>TP / FP / FN / TN</td>{[report.test, report.testReviewGate].map((m, index) => <td key={index}>{m.confusion.tp} / {m.confusion.fp} / {m.confusion.fn} / {m.confusion.tn}</td>)}</tr>
           <tr><td>Brier score (transaction calibration)</td><td colSpan={2}>{report.test.brierScore.toFixed(3)}</td></tr>
         </tbody></table>
-        <p className="muted">No predicted positives means precision is unavailable. Case reconstruction is not evaluated here.</p>
+        <p className="muted">No predicted positives means precision is unavailable. This historical milestone 4 report evaluates transactions; separate case reconstruction results appear below.</p>
         {report.limitations.map(item => <p className="muted" key={item}>{item}</p>)}
       </details>}
     </>}

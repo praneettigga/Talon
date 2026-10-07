@@ -16,6 +16,7 @@
     "models:train": "npm run models:train -w backend",
     "models:replay": "npm run models:replay -w backend",
     "enrichment:prepare": "npm run enrichment:prepare -w backend",
+    "evaluation:cases": "npm run evaluation:cases -w backend",
     "data:replay": "python -m pipeline.replay",
     "data:download": "python -m pipeline download",
     "data:profile": "python -m pipeline profile",

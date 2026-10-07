@@ -5,6 +5,7 @@ import { Graph } from './Graph';
 import { Investigation } from './Investigation';
 import { Models, Risk } from './Risk';
 import { EnrichmentControls } from './Enrichment';
+import { CaseEvaluation } from './Evaluation';
 import './style.css';
 
 const account = (bank: string, id: string) => `${bank} / ${id}`;
@@ -90,6 +91,7 @@ function App() {
         : <p className="muted">Select a transaction from the feed or graph to see its source fields.</p>}
     </section>
     {snapshot && <Models models={snapshot.intelligence.models} />}
+    <CaseEvaluation />
     {snapshot && <EnrichmentControls context={snapshot.intelligence.enrichment} />}
     <footer>Curated demonstration subset. Scores and severity prioritise investigation; they do not establish fraud. Holds are observed-graph simulations only.</footer>
   </main>;
