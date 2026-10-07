@@ -170,4 +170,49 @@ Browser tests reset the shared replay. Set `TALON_UI_URL` if the dashboard is ru
 - `docs/data/` — recorded manifests and evaluation reports.
 - `data/` — local datasets, models, and replay artifacts (ignored by Git).
 
+## Architecture
+
+```text
+                           TRANSACTION STREAM
+                                  │
+                                  ▼
+                         FEATURE EXTRACTION
+                                  │
+                   ┌──────────────┴──────────────┐
+                   │                             │
+                   ▼                             ▼
+            BEHAVIOUR ENGINE             GRAPH INTELLIGENCE
+                   │                             │
+          Isolation Forest              ┌────────┴────────┐
+                   │                    │                 │
+                   │                    ▼                 ▼
+                   │             GRAPH RULES          IBM GNN GIN/PNA
+                   │                    │                 │
+                   │               Structuring           │
+                   │               Consolidation         │
+                   │               Fan-out               │
+                   │               Circular Flow         │
+                   │               Device Links          │
+                   │                    │                 │
+                   └────────────────────┼─────────────────┘
+                                        │
+                                        ▼
+                                  RISK FUSION
+                                     XGBoost
+                                        │
+                                        ▼
+                                  ENTITY RISK
+                                        │
+                                        ▼
+                                 CASE CORRELATION
+                                        │
+                                        ▼
+                                CAMPAIGN / CASE RISK
+                                        │
+                     ┌──────────────────┼──────────────────┐
+                     ▼                  ▼                  ▼
+                 Evidence           Timeline          Intervention
+                                                         What-if
+```
+
 See the [acceptance guide](docs/milestone6-acceptance.md) for detailed checks and the [architecture](docs/plans/architecture.md) for design notes. The [vendored model documentation](backend/python/vendor/README.md) records IBM GINe's source revision and Apache-2.0 license. IBM AMLWorld is synthetic data distributed under CDLA-Sharing-1.0; see the dataset manifest for provenance.
