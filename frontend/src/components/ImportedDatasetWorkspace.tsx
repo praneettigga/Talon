@@ -30,19 +30,19 @@ type GraphLink = { source: string; target: string; kind: 'fraud' | 'transfer' | 
 
 const detectionDuration = 10_000
 const pipeline = [
-  { number: '01', label: 'Transaction stream ingest', start: 0, end: 900 },
-  { number: '02', label: 'Feature extraction', start: 900, end: 1_800 },
-  { number: '03', label: 'Behaviour engine · Isolation Forest', start: 1_800, end: 5_000 },
-  { number: '04', label: 'Graph intelligence', start: 1_800, end: 5_000 },
-  { number: '05', label: 'Risk fusion · XGBoost', start: 5_000, end: 6_200 },
-  { number: '06', label: 'Entity risk', start: 6_200, end: 7_100 },
-  { number: '07', label: 'Case correlation', start: 7_100, end: 8_000 },
-  { number: '08', label: 'Campaign / case risk', start: 8_000, end: 9_000 },
-  { number: '09', label: 'Outputs', start: 9_000, end: 10_000 },
+  { number: '01', label: 'Local file ingest', start: 0, end: 900 },
+  { number: '02', label: 'Field and transaction extraction', start: 900, end: 1_800 },
+  { number: '03', label: 'Risk signal evaluation', start: 1_800, end: 5_000 },
+  { number: '04', label: 'Relationship and device linking', start: 1_800, end: 5_000 },
+  { number: '05', label: 'Account risk aggregation', start: 5_000, end: 6_200 },
+  { number: '06', label: 'Entity profiles', start: 6_200, end: 7_100 },
+  { number: '07', label: 'Network correlation', start: 7_100, end: 8_000 },
+  { number: '08', label: 'Detection summary', start: 8_000, end: 9_000 },
+  { number: '09', label: 'Local results', start: 9_000, end: 10_000 },
 ]
-const graphChecks = ['Structuring', 'Consolidation', 'Fan-out', 'Circular flow', 'Device links', 'IBM GNN · GIN / PNA']
+const graphChecks = ['Linked accounts', 'Counterparties', 'Fan-out', 'Circular flow', 'Shared devices', 'Network branches']
 
-function DetectionProgress({ dataset, onExit, onComplete }: { dataset: ImportedDataset; onExit: () => void; onComplete: () => void }) {
+export function DetectionProgress({ dataset, onExit, onComplete }: { dataset: ImportedDataset; onExit: () => void; onComplete: () => void }) {
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
     const startedAt = performance.now()
@@ -60,7 +60,7 @@ function DetectionProgress({ dataset, onExit, onComplete }: { dataset: ImportedD
   const percent = Math.floor((elapsed / detectionDuration) * 100)
   const graphElapsed = Math.max(0, elapsed - 1_800)
   return <main className="detection-screen" aria-label="Dataset detection progress">
-    <div className="detection-topbar"><div className="brand-lockup"><div className="brand-mark"><Shield size={18} /><span /></div><div><b>TALON</b><small>NETWORK INTELLIGENCE</small></div></div><button className="button-quiet" onClick={onExit}><X size={14} /> Cancel import</button></div>
+    <div className="detection-topbar"><div className="brand-lockup"><div className="brand-mark"><Shield size={18} /><span /></div><div><b>TALON</b><small>NETWORK INTELLIGENCE</small></div></div><button className="button-quiet" onClick={onExit}><X size={14} /> Cancel analysis</button></div>
     <section className="detection-content">
       <div className="detection-kicker"><span className="detection-pulse" /> IMPORT ANALYSIS <span>·</span> {dataset.accounts.length.toLocaleString()} ACCOUNTS</div>
       <h1>Building your network</h1>
@@ -426,7 +426,7 @@ export default function ImportedDatasetWorkspace({ dataset, onExit, onImport, im
       <div className="topbar-right"><button className="button-quiet import-return" onClick={onExit}><ArrowLeft size={14} /> Live workspace</button><button className="import-dataset-trigger" onClick={onImport}><Upload size={13} /> Import another</button></div>
     </header>
     {importError && <div className="import-error-banner" role="alert"><span>{importError}</span><button onClick={onDismissImportError} aria-label="Dismiss import error"><X size={13} /></button></div>}
-    <div className="import-workspace-heading"><div><span className="eyebrow">LOCAL CSV EXPLORER</span><h1>Dataset network</h1><p>{dataset.name} <span>·</span> {dataset.accounts.length.toLocaleString()} accounts <span>·</span> {dataset.transactionCount.toLocaleString()} transaction rows</p></div><div className="import-detection-status">Source fields only</div></div>
+    <div className="import-workspace-heading"><div><span className="eyebrow">LOCAL ANALYSIS RESULTS</span><h1>Dataset network</h1><p>{dataset.name} <span>·</span> {dataset.accounts.length.toLocaleString()} accounts <span>·</span> {dataset.transactionCount.toLocaleString()} transaction rows</p></div><div className="import-detection-status"><span className="detection-pulse" /> Analysis complete</div></div>
     <div className="import-layout">
       <aside className="import-side-panel dataset-panel" aria-label="Imported dataset accounts">
         <div className="import-panel-head"><div><span className="eyebrow">DATASET</span><h2>Accounts</h2></div><span className="import-account-count">{visibleAccounts.length} / {dataset.accounts.length}</span></div>
@@ -463,6 +463,6 @@ export default function ImportedDatasetWorkspace({ dataset, onExit, onImport, im
         </> : <div className="analytics-empty"><Database size={20} /><h2>Select an account</h2><p>Account risk, trends and transaction details will appear here.</p></div>}
       </aside>
     </div>
-    <footer className="import-footer"><span><span className="tiny-status" /> Local CSV explorer</span><span>Scores are supplied by the CSV; this view does not run backend models.</span><button onClick={onImport}><Upload size={12} /> Import another dataset</button></footer>
+    <footer className="import-footer"><span><span className="tiny-status" /> Local dataset analysis</span><span>Analysis uses fields available in the imported CSV and stays in this browser.</span><button onClick={onImport}><Upload size={12} /> Import another dataset</button></footer>
   </main>
 }

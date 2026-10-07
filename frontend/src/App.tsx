@@ -1,8 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import {
-  Activity, ArrowDownUp, ArrowLeft, BarChart3, Bell, ChevronRight, CircleHelp, Clock3,
+  Activity, ArrowDownUp, ArrowLeft, BarChart3, Bell, ChevronRight, CircleHelp,
   Database, FileSearch, GitCompareArrows, Pause, Play, Radio, RotateCcw, Upload,
-  Search, Shield, SlidersHorizontal, Sparkles, TableProperties, X,
+  Search, Shield, SlidersHorizontal, Sparkles, X,
 } from 'lucide-react'
 import DataRail from './components/DataRail'
 import FlowGraph from './components/FlowGraph'
@@ -16,7 +16,7 @@ import { Investigation } from './Investigation'
 import { Models } from './Risk'
 import { EnrichmentControls } from './Enrichment'
 import { CaseEvaluation } from './Evaluation'
-import ImportedDatasetWorkspace from './components/ImportedDatasetWorkspace'
+import ImportedDatasetWorkspace, { DetectionProgress } from './components/ImportedDatasetWorkspace'
 import { parseImportedFiles, type ImportedDataset } from './importedData'
 
 const NetworkGraph = lazy(() => import('./components/NetworkGraph'))
@@ -73,6 +73,7 @@ export default function App() {
   const importInput = useRef<HTMLInputElement>(null)
   const [importedDataset, setImportedDataset] = useState<ImportedDataset | null>(null)
   const [importSession, setImportSession] = useState(0)
+  const [importPhase, setImportPhase] = useState<'replay' | 'detecting' | 'workspace'>('replay')
   const [importError, setImportError] = useState('')
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [connected, setConnected] = useState(false)
@@ -156,7 +157,6 @@ export default function App() {
   const topEvidence = activeEvidence.slice(0, 2)
   const currentTransaction = transactions.find(item => item.transaction_id === snapshot?.events.at(-1)?.id) ?? null
   const selectedTransaction = transactions.find(item => item.transaction_id === selectedTransactionId) ?? currentTransaction
-  const currentProgress = snapshot?.total ? (snapshot.cursor / snapshot.total) * 100 : 0
   const highRiskCount = accounts.filter(account => account.risk_score != null && account.risk_score >= 80).length
 
   useEffect(() => {
@@ -254,6 +254,7 @@ export default function App() {
       if (!dataset.accounts.length) throw new Error('No account identifiers were found. Include an account_id, account, source_account, or nameOrig column.')
       setImportedDataset(dataset)
       setImportSession(session => session + 1)
+      setImportPhase('replay')
       setImportError('')
     } catch (failure) {
       setImportError((failure as Error).message || 'This dataset could not be read as CSV.')
@@ -347,6 +348,10 @@ export default function App() {
     void send({ action: 'speed', speed: Number(event.target.value) as ReplaySpeed })
   }
   const handleReplay = () => {
+    if (importedDataset) {
+      setImportPhase('detecting')
+      return
+    }
     if (!snapshot) return
     void send({ action: snapshot.status === 'running' ? 'pause' : 'start' })
   }
@@ -360,7 +365,8 @@ export default function App() {
 
   const latestEventId = currentTransaction?.transaction_id ?? ''
 
-  if (importedDataset) return <>{datasetPicker}<ImportedDatasetWorkspace key={importSession} dataset={importedDataset} onExit={() => setImportedDataset(null)} onImport={openDatasetPicker} importError={importError} onDismissImportError={() => setImportError('')} /></>
+  if (importedDataset && importPhase === 'detecting') return <DetectionProgress dataset={importedDataset} onExit={() => setImportPhase('replay')} onComplete={() => setImportPhase('workspace')} />
+  if (importedDataset && importPhase === 'workspace') return <>{datasetPicker}<ImportedDatasetWorkspace key={importSession} dataset={importedDataset} onExit={() => { setImportedDataset(null); setImportPhase('replay') }} onImport={openDatasetPicker} importError={importError} onDismissImportError={() => setImportError('')} /></>
 
   return (
     <div className="app-shell">
@@ -369,7 +375,7 @@ export default function App() {
         <div className="brand-lockup"><div className="brand-mark"><Shield size={18} strokeWidth={1.8} /><span /></div><div><b>TALON</b><small>NETWORK INTELLIGENCE</small></div></div>
         <div className="topbar-divider" />
         <div className="workspace-crumb"><span className="crumb-muted">INVESTIGATIONS</span><ChevronRight size={13} /><span>{activeCase?.case_id ?? 'Network overview'}</span></div>
-        <div className="topbar-right"><button className="import-dataset-trigger" onClick={openDatasetPicker}><Upload size={13} /> Import dataset</button><div className={`stream-status ${connected ? '' : 'stream-offline'}`}><span className="live-dot" /> {connected ? 'TALON API CONNECTED' : 'CONNECTING TO TALON'}</div><button className="icon-button top-icon" title="Notifications"><Bell size={16} /><i /></button><div className="avatar">AD</div></div>
+        <div className="topbar-right"><div className={`stream-status ${connected ? '' : 'stream-offline'}`}><span className="live-dot" /> {connected ? 'TALON API CONNECTED' : 'CONNECTING TO TALON'}</div><button className="icon-button top-icon" title="Notifications"><Bell size={16} /><i /></button><div className="avatar">AD</div></div>
       </header>
       {importError && <div className="import-error-banner" role="alert"><span>{importError}</span><button onClick={() => setImportError('')} aria-label="Dismiss import error"><X size={13} /></button></div>}
 
@@ -377,7 +383,7 @@ export default function App() {
         <aside className="case-sidebar">
           <div className="sidebar-intro"><div><span className="eyebrow">INVESTIGATION DESK</span><h1>Case network</h1></div><button className="icon-button tiny" title="Workspace help"><CircleHelp size={15} /></button></div>
           <div className="case-stat-row"><div className="stat-mini"><span>OPEN CASES</span><strong>{String(cases.length).padStart(2, '0')}</strong></div><div className="stat-mini"><span>HIGH RISK</span><strong className="coral-text">{String(highRiskCount).padStart(2, '0')}</strong></div><div className="stat-mini"><span>OBSERVED ACCTS</span><strong>{String(accounts.length).padStart(2, '0')}</strong></div></div>
-          <div className="sidebar-section-head"><div><span className="eyebrow">ACTIVE QUEUE</span><span className="queue-count">{filteredCases.length} cases</span></div><button className="icon-button tiny" title="Sort by severity and risk" onClick={() => setSortDescending(value => !value)}><ArrowDownUp size={14} /></button></div>
+          <div className="sidebar-section-head"><span className="eyebrow">ACTIVE QUEUE</span><button className="icon-button tiny" title="Sort by severity and risk" onClick={() => setSortDescending(value => !value)}><ArrowDownUp size={14} /></button></div>
           <label className="case-search"><Search size={14} /><input value={caseSearch} onChange={event => setCaseSearch(event.target.value)} placeholder="Search cases" /><kbd>⌘ F</kbd></label>
           <div className="case-list">
             {filteredCases.map((item, index) => <button key={item.case_id} className={`case-card ${activeCaseIdResolved === item.case_id ? 'case-card-active' : ''}`} onClick={() => handleCase(item.case_id)}>
@@ -389,13 +395,12 @@ export default function App() {
             </button>)}
             {filteredCases.length === 0 && <div className="empty-state-small">{snapshot?.status === 'unavailable' ? 'Talon replay is unavailable.' : cases.length ? 'No cases match these filters.' : 'Cases appear as observed transactions form supported structures.'}</div>}
           </div>
-          <div className="sidebar-filter-box"><div className="filter-title"><SlidersHorizontal size={14} /><span>Minimum risk</span><b>{riskThreshold}+</b></div><input aria-label="Minimum risk threshold" type="range" min="0" max="100" step="5" value={riskThreshold} onChange={event => setRiskThreshold(Number(event.target.value))} /><div className="range-labels"><span>All observed</span><span>High risk</span></div></div>
-          <div className="sidebar-bottom"><div className="profile-mini"><div className="avatar avatar-small">AD</div><div><b>Investigator</b><small>VersionOne workspace</small></div><button className="icon-button tiny"><ChevronRight size={14} /></button></div><div className="workspace-label"><span className="workspace-indicator" /> Talon API <span>{snapshot?.intelligence.models.status ?? '—'}</span></div></div>
+          <div className="sidebar-bottom"><div className="profile-mini"><div className="avatar avatar-small">AD</div><div><b>Investigator</b><small>VersionOne workspace</small></div><button className="icon-button tiny"><ChevronRight size={14} /></button></div></div>
         </aside>
 
         <section className="main-workspace">
           <div className="workspace-heading">
-            <div className="heading-left"><span className="eyebrow">LIVE NETWORK VIEW <span className="heading-slash">/</span> {activeCase?.case_id ?? 'OVERVIEW'}</span><h2>{view === 'network' ? 'Financial network' : 'Transaction pathway'}<span className="heading-badge">{view === 'network' ? '3D' : '2D'}</span></h2><p>{view === 'network' ? activeCase ? `${activeCase.typology} · ${activeCase.entity_count} accounts · ${activeCase.transaction_count} observed transfers` : 'Observed transfers, supported structures, and synthetic context links' : `${activeCase?.typology ?? 'Observed account activity'} · ${activeCaseTransactions.length} linked transfers`}</p></div>
+            <div className="heading-left"><span className="eyebrow">OBSERVED REPLAY</span><h2>{view === 'network' ? 'Financial network' : 'Transaction pathway'}<span className="heading-badge">{view === 'network' ? '3D' : '2D'}</span></h2><p>{view === 'network' ? activeCase ? `${activeCase.typology} · ${activeCase.entity_count} accounts · ${activeCase.transaction_count} observed transfers` : 'Observed transfers, supported structures, and synthetic context links' : `${activeCase?.typology ?? 'Observed account activity'} · ${activeCaseTransactions.length} linked transfers`}</p></div>
           <div className="workspace-actions">{view === 'flow' ? <button className="button-quiet" onClick={() => setView('network')}><ArrowLeft size={14} /> Network</button> : graphLevel !== 'overview' && <button className="button-quiet" onClick={() => setView('flow')}>Flow view</button>}<button className="button-quiet investigation-open" disabled={!activeCase} onClick={() => setShowInvestigation(true)}><FileSearch size={13} /> Case details</button><button className="button-quiet feed-open" onClick={() => setShowFeed(true)}><Activity size={13} /> Live feed</button><button className="button-outline" disabled={!activeCase || !canControl} onClick={() => setShowWhatIf(true)}><GitCompareArrows size={14} /> Simulate hold</button><button className="icon-button data-toggle" onClick={() => setDataOpen(true)} title="Open data room"><Database size={15} /></button></div>
           </div>
 
@@ -412,7 +417,7 @@ export default function App() {
           <div className={`graph-panel ${view === 'flow' ? 'flow-panel' : ''}`}>
             {view === 'network' ? <>
               <div className="graph-vignette" />
-              <nav className="graph-breadcrumb" aria-label="Graph navigation"><button onClick={navigateOverview}>Network overview</button>{graphLevel !== 'overview' && activeCase && <><ChevronRight size={11} /><button onClick={() => { setGraphLevel('case'); setView('network'); setFocusedAccountId('') }}>{activeCase.case_id}</button></>}{graphLevel === 'account' && focusedAccount && <><ChevronRight size={11} /><span>{focusedAccount.account_id}</span></>}</nav>
+              {graphLevel !== 'overview' && <nav className="graph-breadcrumb" aria-label="Graph navigation"><button onClick={navigateOverview}>Network overview</button>{activeCase && <><ChevronRight size={11} /><button onClick={() => { setGraphLevel('case'); setView('network'); setFocusedAccountId('') }}>{activeCase.case_id}</button></>}{graphLevel === 'account' && focusedAccount && <><ChevronRight size={11} /><span>{focusedAccount.account_id}</span></>}</nav>}
               {webgl ? <Suspense fallback={<div className="graph-loading"><span className="loading-orbit" /><b>Preparing network renderer</b><small>Loading 3D topology</small></div>}>
                 <NetworkGraph nodes={visibleGraph.nodes} links={visibleGraph.links} activeCaseId={activeCaseIdResolved} replayTransactionId={latestEventId} selectedTransactionId={selectedTransactionId} reducedMotion={reducedMotion} heatmap={heatmap} heldAccountIds={holdPreview?.heldAccountIds ?? emptyIds} interruptedTransferIds={holdPreview?.interruptedTransferIds ?? emptyIds} onCase={handleCase} onAccount={handleAccount} onContext={handleContext} onTransaction={handleTransaction} />
               </Suspense> : <KnowledgeGraph2D nodes={visibleGraph.nodes} links={visibleGraph.links} selectedTransactionId={selectedTransactionId} replayTransactionId={latestEventId} heldAccountIds={holdPreview?.heldAccountIds ?? emptyIds} interruptedTransferIds={holdPreview?.interruptedTransferIds ?? emptyIds} onCase={handleCase} onAccount={handleAccount} onContext={handleContext} onTransaction={handleTransaction} />}
@@ -430,20 +435,19 @@ export default function App() {
           </div>
 
           <section className="replay-panel">
-            <div className="replay-top"><div className="replay-title"><span className="replay-icon"><Radio size={14} /></span><div><b>TALON STREAM REPLAY</b><small>{snapshot?.dataset ?? 'Connecting to Talon replay service'}</small></div></div>
-              <div className="replay-event">{selectedTransaction ? <><span className="event-dot" /> <b>{selectedTransaction.transaction_id}</b><span>{selectedTransaction.source_account} → {selectedTransaction.destination_account}</span><time>{formatTime(selectedTransaction.timestamp)}</time></> : <><span className="event-dot muted" /><span>{snapshot?.status === 'unavailable' ? 'Replay data unavailable' : 'Start replay to observe transactions'}</span></>}</div>
-              <div className="replay-buttons"><select aria-label="Replay speed" value={snapshot?.speed ?? 1} disabled={!canControl || busy} onChange={handleSpeed}><option value={1}>1 / sec</option><option value={5}>5 / sec</option><option value={20}>20 / sec</option></select><button className="icon-button tiny" disabled={!canControl || busy} onClick={() => void send({ action: 'reset' })} title="Reset Talon replay"><RotateCcw size={14} /></button><button className="play-button" disabled={!canControl || busy || snapshot?.status === 'completed'} onClick={handleReplay}>{snapshot?.status === 'running' ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}{snapshot?.status === 'running' ? 'Pause' : 'Play'}</button></div>
+            <div className="replay-top"><div className="replay-title"><span className="replay-icon"><Radio size={14} /></span><div><b>STREAM REPLAY</b><small>{importedDataset ? importedDataset.name : snapshot?.dataset ?? 'No local dataset selected'}</small></div></div>
+              <div className="replay-summary"><span className={importedDataset ? 'event-dot' : 'event-dot muted'} />{importedDataset ? `${importedDataset.accounts.length.toLocaleString()} accounts · ${importedDataset.transactionCount.toLocaleString()} rows` : `${snapshot?.cursor ?? 0} / ${snapshot?.total ?? 0} events`}</div>
+              <div className="replay-buttons"><button className="import-dataset-trigger" onClick={openDatasetPicker}><Upload size={13} /> {importedDataset ? 'Replace dataset' : 'Import dataset'}</button><select aria-label="Replay speed" value={snapshot?.speed ?? 1} disabled={Boolean(importedDataset) || !canControl || busy} onChange={handleSpeed}><option value={1}>1 / sec</option><option value={5}>5 / sec</option><option value={20}>20 / sec</option></select><button className="icon-button tiny" disabled={Boolean(importedDataset) || !canControl || busy} onClick={() => void send({ action: 'reset' })} title="Reset Talon replay"><RotateCcw size={14} /></button><button className="play-button" disabled={importedDataset ? false : !canControl || busy || snapshot?.status === 'completed'} onClick={handleReplay}>{importedDataset ? <Play size={13} fill="currentColor" /> : snapshot?.status === 'running' ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}{importedDataset ? 'Analyze' : snapshot?.status === 'running' ? 'Pause' : 'Play'}</button></div>
             </div>
             {(error || snapshot?.error || !connected) && <p role="alert" className="notice replay-notice">{error || snapshot?.error || 'Waiting for the Talon API connection. Replay controls will return when it reconnects.'}</p>}
             {snapshot?.intelligence.status === 'unavailable' && <p role="status" className="notice replay-notice">Intelligence unavailable: {snapshot.intelligence.error}. Observed transfers remain available.</p>}
-            <div className="timeline-row"><div className="timeline-track"><div className="timeline-fill" style={{ width: `${currentProgress}%` }} /><div className="timeline-events">{transactions.map((item, index) => <button key={item.transaction_id} className={`timeline-event ${index < (snapshot?.cursor ?? 0) ? 'timeline-event-done' : ''} ${selectedTransaction?.transaction_id === item.transaction_id ? 'timeline-event-current' : ''}`} style={{ left: `${((index + 1) / Math.max(snapshot?.total ?? 1, 1)) * 100}%` }} title={`${item.transaction_id} · ${item.reason}`} onClick={() => selectObservedEvent(item)} />)}</div></div><div className="timeline-now"><Clock3 size={11} /> {snapshot?.cursor ?? 0} / {snapshot?.total ?? 0} · {formatTime(snapshot?.eventTime)}</div></div>
           </section>
         </section>
 
         <DataRail tables={tables} activeTable={activeTable} source={selectedSource} onTable={file => setActiveTable(file)} onRow={handleTableRow} open={dataOpen} onClose={() => setDataOpen(false)} dataset={snapshot?.dataset} cursor={snapshot?.cursor} total={snapshot?.total} />
       </main>
 
-      <footer className="app-footer"><span><span className="tiny-status" /> {connected ? 'TALON API CONNECTED' : 'TALON API OFFLINE'}</span><span>{snapshot?.dataset ?? 'Waiting for backend snapshot'} <b>·</b> Scores prioritize investigation; they do not establish fraud</span><button onClick={() => setDataOpen(true)}><FileSearch size={12} /> Observed data</button><button onClick={() => setShowAnalytics(true)}><BarChart3 size={12} /> Models & evaluation</button><button onClick={() => setShowWhatIf(true)} disabled={!activeCase || !canControl}><TableProperties size={12} /> Route simulation</button><span className="footer-version">v1.0.0</span></footer>
+      <footer className="app-footer"><span>{snapshot?.dataset ?? 'Waiting for backend snapshot'} <b>·</b> Scores prioritize investigation; they do not establish fraud</span><button onClick={() => setShowAnalytics(true)}><BarChart3 size={12} /> Models & evaluation</button><span className="footer-version">v1.0.0</span></footer>
 
       {showWhatIf && activeCase && snapshot && <WhatIfDialog caseRecord={activeCase} accounts={accounts} transactions={transactions} cursor={snapshot.cursor} replayStatus={snapshot.status} onPreview={setHoldPreview} onClose={() => { setShowWhatIf(false); setHoldPreview(null) }} />}
       {showInvestigation && snapshot && <FeatureModal title={activeCase ? `Case investigation · ${activeCase.case_id}` : 'Case investigations'} onClose={() => setShowInvestigation(false)}>
