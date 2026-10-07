@@ -159,6 +159,17 @@ export interface InfrastructureLink {
   facts: string[]
 }
 
+export interface EnrichmentSnapshot {
+  status: 'ready' | 'unavailable'
+  error: string | null
+  label: string
+  asOf: string | null
+  usedInRiskModel: false
+  affectsSeverity: false
+  accounts: Record<string, DeviceContext>
+  links: InfrastructureLink[]
+}
+
 export interface IntelligenceSnapshot {
   status: 'ready' | 'unavailable'
   error: string | null
@@ -170,16 +181,7 @@ export interface IntelligenceSnapshot {
   decisions: { transactionId: string; timestamp: string; features: AccountFeatures[]; risk: DecisionRisk; context: unknown }[]
   entityRisks: Record<string, EntityRisk>
   models: ModelStatus
-  enrichment: {
-    status: 'ready' | 'unavailable'
-    error: string | null
-    label: string
-    asOf: string | null
-    usedInRiskModel: false
-    affectsSeverity: false
-    accounts: Record<string, DeviceContext>
-    links: InfrastructureLink[]
-  }
+  enrichment: EnrichmentSnapshot
 }
 
 export interface Snapshot {

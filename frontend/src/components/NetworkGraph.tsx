@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import ForceGraph3D from 'react-force-graph-3d'
 import type { ForceGraphMethods } from 'react-force-graph-3d'
 import type { GraphLink, GraphNode, Severity } from '../types'
@@ -48,15 +48,35 @@ function transferCurvature(link: GraphLink) {
 }
 
 export default function NetworkGraph({ nodes, links, activeCaseId, replayTransactionId, selectedTransactionId, reducedMotion, heatmap, heldAccountIds, interruptedTransferIds, onCase, onAccount, onContext, onTransaction }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink> | undefined>(undefined)
+  const fittedGraph = useRef('')
+  const [size, setSize] = useState({ width: 0, height: 0 })
+  const graphKey = `${nodes.map(node => node.id).join('|')}::${links.length}`
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const measure = () => setSize({ width: container.clientWidth, height: container.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!size.width || !size.height || !nodes.length) return
+    graphRef.current?.zoomToFit(0, 80)
+  }, [size.width, size.height, graphKey, nodes.length])
   // react-force-graph mutates node/link objects while running its force simulation.
   // Keep that mutable state inside this renderer instead of corrupting adapter data.
   const graphData = useMemo(() => ({ nodes: nodes.map(node => ({ ...node })), links: links.map(link => ({ ...link })) }), [nodes, links])
 
   return (
-    <div className="network-canvas">
+    <div className="network-canvas" ref={containerRef}>
       <ForceGraph3D<GraphNode, GraphLink>
         ref={graphRef}
+        width={size.width || undefined}
+        height={size.height || undefined}
         graphData={graphData}
         backgroundColor="#0a1018"
         showNavInfo={false}
@@ -80,6 +100,12 @@ export default function NetworkGraph({ nodes, links, activeCaseId, replayTransac
         onLinkClick={(link) => link.kind === 'transaction' && onTransaction(link)}
         cooldownTicks={reducedMotion ? 70 : 140}
         warmupTicks={30}
+        onEngineStop={() => {
+          if (nodes.length && fittedGraph.current !== graphKey) {
+            graphRef.current?.zoomToFit(500, 80)
+            fittedGraph.current = graphKey
+          }
+        }}
         enableNodeDrag
         enableNavigationControls
       />

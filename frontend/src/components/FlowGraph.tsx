@@ -35,7 +35,7 @@ export default function FlowGraph({ caseId, accounts, transactions, focusedAccou
       style: [
         { selector: 'node', style: {
           'background-color': '#172633', 'border-color': '#417f79', 'border-width': 1,
-          label: 'data(label)', color: '#dce9e7', 'font-size': 10, 'font-weight': 600,
+          label: 'data(label)', color: '#dce9e7', 'font-size': 13, 'font-weight': 600,
           'text-wrap': 'wrap', 'text-max-width': '94px', 'text-valign': 'bottom', 'text-margin-y': 10,
           width: 30, height: 30, 'overlay-opacity': 0,
         } },
@@ -46,7 +46,7 @@ export default function FlowGraph({ caseId, accounts, transactions, focusedAccou
         { selector: 'edge', style: {
           width: 2, 'line-color': '#4f9d90', 'target-arrow-color': '#72dbc4', 'target-arrow-shape': 'triangle',
           'curve-style': 'bezier', 'control-point-step-size': 30, 'line-cap': 'round',
-          label: 'data(label)', color: '#a9c9c5', 'font-size': 8, 'text-background-color': '#0e171e',
+          label: 'data(label)', color: '#a9c9c5', 'font-size': 11, 'text-background-color': '#0e171e',
           'text-background-opacity': 0.94, 'text-background-padding': '3px', 'text-rotation': 'autorotate',
         } },
         { selector: '.focused', style: { 'border-color': '#f8d27f', 'border-width': 3, 'background-color': '#55452a' } },
@@ -65,7 +65,7 @@ export default function FlowGraph({ caseId, accounts, transactions, focusedAccou
       if (transaction) propsRef.current?.onTransaction(transaction)
     })
     graph.current = cy
-    const observer = new ResizeObserver(() => cy.resize())
+    const observer = new ResizeObserver(() => { cy.resize(); if (cy.nodes().length) cy.fit(undefined, 65) })
     observer.observe(container.current)
     return () => { observer.disconnect(); cy.destroy(); graph.current = null; firstLayout.current = true }
   }, [])
@@ -120,7 +120,7 @@ export default function FlowGraph({ caseId, accounts, transactions, focusedAccou
       cy.layout({ name: 'cose', animate: false, fit: true, randomize: false, padding: 65 }).run()
       firstLayout.current = false
     } else if (addedNode) {
-      cy.layout({ name: 'cose', animate: false, fit: false, randomize: false, padding: 35 }).run()
+      cy.layout({ name: 'cose', animate: false, fit: true, randomize: false, padding: 65 }).run()
     }
   }, [caseId, accounts, transactions, focusedAccountId, focusedTransactionId, replayTransactionId, heldAccountIds, interruptedTransferIds])
 

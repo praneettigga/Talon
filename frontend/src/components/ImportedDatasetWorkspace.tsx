@@ -1,23 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ForceGraph3D from 'react-force-graph-3d'
 import type { ForceGraphMethods } from 'react-force-graph-3d'
+import SpriteText from 'three-spritetext'
+import Chart from 'chart.js/auto'
 import { Activity, ArrowDown, ArrowLeft, ArrowUp, Check, ChevronRight, Database, FileUp, Search, Shield, Upload, X } from 'lucide-react'
 import type { ImportedAccount, ImportedDataset, ImportedTransaction } from '../importedData'
 import { accountReasons } from '../importedData'
-
-declare global {
-  interface Window {
-    SpriteText?: new (text: string, color?: string, textHeight?: number) => {
-      color: string
-      textHeight: number
-      backgroundColor: string
-      padding: number
-      borderRadius: number
-      position: { x: number; y: number; z: number }
-    }
-    Chart?: new (context: CanvasRenderingContext2D, configuration: unknown) => { destroy: () => void }
-  }
-}
 
 type Props = { dataset: ImportedDataset; onExit: () => void; onImport: () => void; importError: string; onDismissImportError: () => void }
 
@@ -29,7 +17,7 @@ type GraphNode = {
   accountId?: string
   account?: ImportedAccount
   transaction?: ImportedTransaction
-  risk?: number
+  risk?: number | null
   linked?: boolean
   x?: number
   y?: number
@@ -38,7 +26,7 @@ type GraphNode = {
   fy?: number
   fz?: number
 }
-type GraphLink = { source: string; target: string; kind: 'fraud' | 'transfer' | 'branch'; risk?: number }
+type GraphLink = { source: string; target: string; kind: 'fraud' | 'transfer' | 'branch'; risk?: number | null }
 
 const detectionDuration = 10_000
 const pipeline = [
@@ -108,7 +96,8 @@ function ProgressStep({ step, elapsed, graphElapsed }: { step: (typeof pipeline)
   </div>
 }
 
-function riskTone(score: number) {
+function riskTone(score: number | null) {
+  if (score == null) return 'unknown'
   return score >= 85 ? 'critical' : score >= 70 ? 'high' : score >= 45 ? 'medium' : 'low'
 }
 
@@ -124,8 +113,8 @@ function accountMerchantCount(account: ImportedAccount) {
   return Math.max(account.merchants.length, account.reportedMerchants ?? 0)
 }
 
-function RiskBadge({ score }: { score: number }) {
-  return <span className={`import-risk import-risk-${riskTone(score)}`}><i />{score.toFixed(1)}</span>
+function RiskBadge({ score }: { score: number | null }) {
+  return <span className={`import-risk import-risk-${riskTone(score)}`} title={score == null ? 'No risk score supplied in the imported data' : 'Supplied or maximum observed transaction risk'}><i />{score?.toFixed(1) ?? '—'}</span>
 }
 
 function overviewGraph(accounts: ImportedAccount[]): { nodes: GraphNode[]; links: GraphLink[] } {
@@ -300,9 +289,8 @@ function NetworkCanvas({ accounts, expanded, selectedAccountId, onAccount, linki
       nodeColor={node => nodeColor(node, selectedAccountId)}
       nodeVal={node => node.kind === 'fraud' ? 24 : node.kind === 'account' ? 5 + (node.risk ?? 0) / 20 : node.kind === 'transaction' ? 1.9 : 3.8}
       nodeOpacity={0.96}
-      nodeThreeObject={node => {
-        if (!window.SpriteText) return null as never
-        const sprite = new window.SpriteText(graphLabel(node), '#dce8ef', node.kind === 'fraud' ? 8 : node.kind === 'account' ? 5 : 3.2)
+      nodeThreeObject={(node: GraphNode) => {
+        const sprite = new SpriteText(graphLabel(node), node.kind === 'fraud' ? 8 : node.kind === 'account' ? 5 : 3.2, '#dce8ef')
         sprite.color = node.kind === 'fraud' ? '#91ccff' : '#c5d0d8'
         sprite.backgroundColor = node.kind === 'fraud' ? 'rgba(52, 125, 193, .18)' : node.kind === 'account' && node.linked ? 'rgba(28, 99, 87, .18)' : 'rgba(5, 10, 15, .78)'
         sprite.padding = node.kind === 'account' ? 2 : 1
@@ -341,9 +329,9 @@ function RiskTrend({ account }: { account: ImportedAccount }) {
   useEffect(() => {
     const element = canvas.current
     const chartContext = element?.getContext('2d')
-    if (!element || !chartContext || !window.Chart) { setUnavailable(true); return }
+    if (!element || !chartContext) { setUnavailable(true); return }
     setUnavailable(false)
-    const chart = new window.Chart(chartContext, {
+    const chart = new Chart(chartContext, {
       type: 'line',
       data: {
         labels: account.transactions.map((transaction, index) => transaction.timestamp || `Row ${index + 1}`),
@@ -379,7 +367,7 @@ function RiskTrend({ account }: { account: ImportedAccount }) {
 }
 
 export default function ImportedDatasetWorkspace({ dataset, onExit, onImport, importError, onDismissImportError }: Props) {
-  const [ready, setReady] = useState(false)
+  const [ready] = useState(true)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'all' | 'flagged' | 'linked' | 'unlinked'>('all')
   const [minimumRisk, setMinimumRisk] = useState(0)
@@ -406,12 +394,12 @@ export default function ImportedDatasetWorkspace({ dataset, onExit, onImport, im
     return dataset.accounts.filter(account => {
       const searchable = `${account.id} ${account.fraudType} ${account.transactions.map(item => `${item.id} ${item.device} ${item.merchant}`).join(' ')}`.toLowerCase()
       if (search && !searchable.includes(search)) return false
-      if (account.risk < minimumRisk) return false
-      if (filter === 'flagged' && account.risk < 70) return false
+      if (minimumRisk > 0 && (account.risk == null || account.risk < minimumRisk)) return false
+      if (filter === 'flagged' && (account.risk == null || account.risk < 70)) return false
       if (filter === 'linked' && !account.linked) return false
       if (filter === 'unlinked' && account.linked) return false
       return true
-    }).sort((a, b) => sortDescending ? b.risk - a.risk || a.id.localeCompare(b.id) : a.risk - b.risk || a.id.localeCompare(b.id))
+    }).sort((a, b) => sortDescending ? (b.risk ?? -1) - (a.risk ?? -1) || a.id.localeCompare(b.id) : (a.risk ?? -1) - (b.risk ?? -1) || a.id.localeCompare(b.id))
   }, [dataset.accounts, filter, minimumRisk, query, sortDescending])
 
   const expandedAccount = visibleAccounts.find(account => account.id === expandedAccountId) ?? null
@@ -426,14 +414,10 @@ export default function ImportedDatasetWorkspace({ dataset, onExit, onImport, im
     }
   }, [ready])
 
-  const completeDetection = useCallback(() => setReady(true), [])
-
   const selectAccount = (accountId: string) => {
     setSelectedAccountId(accountId)
     setExpandedAccountId(accountId)
   }
-
-  if (!ready) return <DetectionProgress dataset={dataset} onExit={onExit} onComplete={completeDetection} />
 
   return <main className="import-app-shell">
     <header className="topbar import-topbar">
@@ -442,7 +426,7 @@ export default function ImportedDatasetWorkspace({ dataset, onExit, onImport, im
       <div className="topbar-right"><button className="button-quiet import-return" onClick={onExit}><ArrowLeft size={14} /> Live workspace</button><button className="import-dataset-trigger" onClick={onImport}><Upload size={13} /> Import another</button></div>
     </header>
     {importError && <div className="import-error-banner" role="alert"><span>{importError}</span><button onClick={onDismissImportError} aria-label="Dismiss import error"><X size={13} /></button></div>}
-    <div className="import-workspace-heading"><div><span className="eyebrow">DETECTION COMPLETE <i className="detection-pulse" /></span><h1>Dataset network</h1><p>{dataset.name} <span>·</span> {dataset.accounts.length.toLocaleString()} accounts <span>·</span> {dataset.transactionCount.toLocaleString()} transaction rows</p></div><div className="import-detection-status"><span className="import-check"><Check size={13} /></span> Pipeline complete</div></div>
+    <div className="import-workspace-heading"><div><span className="eyebrow">LOCAL CSV EXPLORER</span><h1>Dataset network</h1><p>{dataset.name} <span>·</span> {dataset.accounts.length.toLocaleString()} accounts <span>·</span> {dataset.transactionCount.toLocaleString()} transaction rows</p></div><div className="import-detection-status">Source fields only</div></div>
     <div className="import-layout">
       <aside className="import-side-panel dataset-panel" aria-label="Imported dataset accounts">
         <div className="import-panel-head"><div><span className="eyebrow">DATASET</span><h2>Accounts</h2></div><span className="import-account-count">{visibleAccounts.length} / {dataset.accounts.length}</span></div>
@@ -471,7 +455,7 @@ export default function ImportedDatasetWorkspace({ dataset, onExit, onImport, im
         {selectedAccount ? <>
           <div className="analytics-account-head"><div><span className="eyebrow">ACCOUNT PROFILE</span><h2 title={selectedAccount.id}>{selectedAccount.id}</h2></div><RiskBadge score={selectedAccount.risk} /></div>
           <div className="account-fraud-type"><span>FRAUD TYPE</span><strong>{selectedAccount.fraudType}</strong></div>
-          <div className="risk-score-block"><div><span>ACCOUNT RISK SCORE</span><small>Imported risk index</small></div><strong className={`score-${riskTone(selectedAccount.risk)}`}>{selectedAccount.risk.toFixed(1)}<small>/ 100</small></strong></div>
+          <div className="risk-score-block"><div><span>ACCOUNT RISK SCORE</span><small>{selectedAccount.sourceRisk != null ? 'Supplied account risk' : selectedAccount.risk != null ? 'Maximum supplied transaction risk' : 'No risk value supplied'}</small></div><strong className={`score-${riskTone(selectedAccount.risk)}`}>{selectedAccount.risk?.toFixed(1) ?? '—'}<small>{selectedAccount.risk == null ? '' : '/ 100'}</small></strong></div>
           <div className="account-kpis"><div><span>TOTAL TRANSACTIONS</span><strong>{accountTransactionCount(selectedAccount).toLocaleString()}</strong></div><div><span>TOTAL AMOUNT</span><strong>{totalAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></div><div><span>DEVICES</span><strong>{accountDeviceCount(selectedAccount)}</strong></div><div><span>MERCHANTS</span><strong>{accountMerchantCount(selectedAccount)}</strong></div></div>
           <section className="analytics-section"><div className="import-section-title"><h3>Risk over time</h3><span>TX_RISK</span></div><RiskTrend account={selectedAccount} /></section>
           <section className="analytics-section why-flagged"><div className="import-section-title"><h3>Why it was flagged</h3><span>{accountReasons(selectedAccount, dataset.accounts).length} signals</span></div><ul>{accountReasons(selectedAccount, dataset.accounts).map((reason, index) => <li key={`${index}:${reason}`}><span>{String(index + 1).padStart(2, '0')}</span>{reason}</li>)}</ul></section>
@@ -479,6 +463,6 @@ export default function ImportedDatasetWorkspace({ dataset, onExit, onImport, im
         </> : <div className="analytics-empty"><Database size={20} /><h2>Select an account</h2><p>Account risk, trends and transaction details will appear here.</p></div>}
       </aside>
     </div>
-    <footer className="import-footer"><span><span className="tiny-status" /> Detection complete</span><span>Risk index is derived from imported risk fields and observable data patterns.</span><button onClick={onImport}><Upload size={12} /> Import another dataset</button></footer>
+    <footer className="import-footer"><span><span className="tiny-status" /> Local CSV explorer</span><span>Scores are supplied by the CSV; this view does not run backend models.</span><button onClick={onImport}><Upload size={12} /> Import another dataset</button></footer>
   </main>
 }

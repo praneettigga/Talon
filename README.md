@@ -115,8 +115,8 @@ cd backend && npm run dev
 cd frontend && npm run dev
 ```
 
-Open the Vite URL printed by the frontend (normally http://127.0.0.1:5173). Press **Start
-replay**, select 1, 5, or 20 events per second, and click a feed entry or graph arrow to
+Open the Vite URL printed by the frontend (normally http://127.0.0.1:5173). Press **Play**,
+select 1, 5, or 20 events per second, and click a feed entry or graph transfer to
 inspect its original fields. Pause freezes the stream. Reset clears emitted events and
 returns speed to 1; replaying produces the same event sequence. Event-time gaps are
 compressed for demonstration, while original timestamps remain visible.
@@ -460,13 +460,14 @@ cd frontend && npm run test:ui
 CHROMIUM_PATH=/usr/bin/chromium npm run test:ui
 ```
 
-Set `TALON_UI_URL` if Vite uses a different port. Screenshots go to gitignored
-`frontend/test-results/`. The browser test resets the shared local replay and checks controls,
-pause/reload, full completion, identical reset events/features/cases, case evidence,
-investigation graphs, account selection, model contributions, frozen evaluation, synthetic
-context, single/group simulations, unchanged intelligence after simulation, separate case
-metrics, an explicitly unavailable case report, and mobile layout. For milestone 6 browser
-acceptance, prepare model artifacts, the later replay and case evaluation first.
+Set `TALON_UI_URL` if Vite uses a different port. The browser tests reset the shared local
+replay and verify live API data in the merged dashboard, replay controls, model and case
+evaluation panels, and CSV import provenance. For the browser checks, prepare model
+artifacts, the later replay, and case evaluation first.
+
+CSV import is a local source-data explorer. It displays supplied account risk or the
+maximum supplied transaction risk, if available. It does not submit imports to the
+backend or run Talon's trained models on them; missing scores remain unavailable.
 
 Tests create temporary, explicitly artificial records to verify validation and downloader
 failure handling. They are not demonstration data or benchmark results. The real milestone
@@ -476,7 +477,7 @@ authenticated automated download has not yet been exercised against Kaggle.
 
 ## Components and provenance
 
-- `frontend/`: React + TypeScript + Vite with Cytoscape.js and simple CSS.
+- `frontend/`: React + TypeScript + Vite with 3D and Cytoscape.js network views.
 - `backend/`: Express replay/REST/SSE service, Python feature/rule/case worker, model training/inference and tests.
 - `pipeline/`: Python download, profiling, deterministic replay preparation, and tests.
 - [Architecture and full plan](docs/plans/talon-12-hour-hackathon-plan.md).

@@ -16,7 +16,7 @@ export interface ImportedTransaction {
 export interface ImportedAccount {
   id: string
   fraudType: string
-  risk: number
+  risk: number | null
   sourceRisk: number | null
   reportedTransactions: number | null
   reportedAmount: number | null
@@ -118,7 +118,7 @@ export function parseImportedFiles(files: Array<{ name: string; text: string }>)
   const accountFor = (id: string, type: string, sourceRisk: number | null = null) => {
     if (!id) return null
     const current = accounts.get(id) ?? {
-      id, fraudType: '', risk: 18, sourceRisk: null, reportedTransactions: null, reportedAmount: null,
+      id, fraudType: '', risk: null, sourceRisk: null, reportedTransactions: null, reportedAmount: null,
       reportedDevices: null, reportedMerchants: null, transactions: [], devices: [], merchants: [], linked: false,
     }
     if (type) current.fraudType = type
@@ -164,12 +164,12 @@ export function parseImportedFiles(files: Array<{ name: string; text: string }>)
         owners.add(from)
         deviceOwners.set(device, owners)
       }
-      if (to) accountFor(to, type, sourceRisk)
+      if (to) accountFor(to, type)
       if (!isTransaction) continue
       sourceRows.add(`${file.name}:${row.rowNumber}`)
 
       for (const [accountId, counterparty, direction] of [[from, to, 'outgoing'], [to, from, 'incoming']] as const) {
-        const account = accountFor(accountId, type, sourceRisk)
+        const account = accountFor(accountId, type, direction === 'outgoing' ? sourceRisk : null)
         if (!account) continue
         const transaction: ImportedTransaction = {
           id, accountId, counterparty, direction, amount, device, merchant,
@@ -195,15 +195,11 @@ export function parseImportedFiles(files: Array<{ name: string; text: string }>)
 
   for (const account of accounts.values()) {
     const txRisks = account.transactions.map(item => item.txRisk).filter((score): score is number => score != null)
-    const roundAmountCount = account.transactions.filter(item => item.amount != null && item.amount > 0 && item.amount % 100 === 0).length
-    const sharedDevice = account.devices.some(device => (deviceOwners.get(device)?.size ?? 0) > 1)
-    const observedSignals = (account.transactions.length >= 5 ? 1 : 0) + (account.devices.length > 1 ? 1 : 0) + (roundAmountCount > 0 ? 1 : 0) + (sharedDevice ? 1 : 0)
-    const derivedRisk = Math.min(82, 22 + observedSignals * 12 + (account.transactions.length >= 10 ? 8 : 0))
-    account.risk = account.sourceRisk ?? (txRisks.length ? Math.max(...txRisks) : account.fraudType ? 96 : account.linked ? derivedRisk : 18)
+    account.risk = account.sourceRisk ?? (txRisks.length ? Math.max(...txRisks) : null)
     account.fraudType ||= account.linked ? 'Unlabelled' : 'Unlinked'
   }
 
-  const importedAccounts = [...accounts.values()].sort((a, b) => b.risk - a.risk || a.id.localeCompare(b.id))
+  const importedAccounts = [...accounts.values()].sort((a, b) => (b.risk ?? -1) - (a.risk ?? -1) || a.id.localeCompare(b.id))
   const reportedTransactionTotal = importedAccounts.reduce((sum, account) => sum + (account.reportedTransactions ?? 0), 0)
   return {
     name: files.map(file => file.name).join(' · '),

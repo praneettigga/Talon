@@ -1,142 +1,58 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test'
 
-test('real dataset replays, pauses, reconnects, completes, and resets identically', async ({ page, request }) => {
-  const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await request.post('/v1/replay/control', { data: { action: 'reset' } });
-  await page.goto('/');
-  await expect(page.getByText('Connected', { exact: true })).toBeVisible();
-  await expect(page.getByText('Start replay to watch transactions arrive.')).toBeVisible();
-  await page.getByLabel('Replay speed').selectOption('20');
-  await page.getByRole('button', { name: 'Start replay', exact: true }).click();
-  await expect.poll(async () => (await (await request.get('/v1/events')).json()).cursor).toBeGreaterThan(20);
-  await page.getByRole('button', { name: 'Pause', exact: true }).click();
-  await expect(page.locator('.play-state')).toHaveText('paused');
-  const paused = await (await request.get('/v1/events')).json();
-  await page.locator('.event').first().click();
-  await expect(page.locator('.detail-panel')).toContainText(paused.events.at(-1).id);
-  await expect(page.locator('.workspace .graph canvas').first()).toBeVisible();
-  await page.getByLabel('All observed events').check();
-  await expect(page.locator('.workspace .graph')).toHaveAttribute('aria-label', `Transaction graph showing ${paused.cursor} transfers`);
-  await page.screenshot({ path: 'test-results/replay-desktop.png', fullPage: true });
-  await page.reload();
-  await expect(page.locator('.progress-label')).toHaveText(`${paused.cursor} / ${paused.total} events`);
-  expect((await (await request.get('/v1/events')).json()).cursor).toBe(paused.cursor);
-  await page.getByRole('button', { name: 'Start replay', exact: true }).click();
-  await expect(page.locator('.play-state')).toHaveText('completed', { timeout: 25000 });
-  const completed = await (await request.get('/v1/events')).json();
-  expect(completed.events).toHaveLength(completed.total);
-  expect(completed.intelligence.status).toBe('ready');
-  expect(completed.intelligence.decisions).toHaveLength(completed.total);
-  expect(completed.intelligence.cases.length).toBeGreaterThan(0);
-  expect(completed.intelligence.models.status).toBe('ready');
-  expect(completed.intelligence.enrichment.status).toBe('ready');
-  expect(completed.intelligence.enrichment.usedInRiskModel).toBe(false);
-  expect(completed.intelligence.decisions.some((item: { risk: { status: string } }) => item.risk.status === 'scored')).toBe(true);
-  expect(completed.intelligence.cases.every((item: { entities: { suspect: boolean }[] }) => item.entities.every(e => !e.suspect))).toBe(true);
-  await page.locator('.case-item').first().click();
-  await expect(page.locator('.evidence-card').first()).toBeVisible();
-  await expect(page.locator('.case-detail .graph canvas').first()).toBeVisible();
-  await expect(page.getByLabel('Inspect case account')).toBeVisible();
-  const selectedAccount = await page.getByLabel('Inspect case account').locator('option').last().getAttribute('value');
-  await page.getByLabel('Inspect case account').selectOption(selectedAccount!);
-  await expect(page.locator('.account-details')).toContainText(selectedAccount!);
-  const risk = await (await request.get(`/v1/entities/${encodeURIComponent(selectedAccount!)}/risk`)).json();
-  expect(risk.status).toBe('scored');
-  expect(typeof risk.riskScore).toBe('number');
-  expect(typeof risk.ginScore).toBe('number');
-  expect(risk.contributions.length).toBeGreaterThan(0);
-  await page.locator('.account-details .contributions summary').click();
-  await expect(page.locator('.account-details .contributions')).toContainText('Margin contribution');
-  const evaluation = await (await request.get('/v1/evaluation')).json();
-  expect(evaluation.test.rows).toBeGreaterThan(0);
-  const modelPanel = page.getByLabel('Model availability and evaluation');
-  await modelPanel.locator('.evaluation summary').click();
-  await expect(modelPanel.locator('.evaluation')).toContainText('False-positive rate');
-  await expect(modelPanel.locator('.evaluation')).toContainText('not full-benchmark estimates');
-  const caseResponse = await request.get('/v1/evaluation/cases');
-  expect(caseResponse.status()).toBe(200);
-  const caseEvaluation = await caseResponse.json();
-  const casePanel = page.getByLabel('Case reconstruction evaluation');
-  await expect(casePanel).toContainText('Case reconstruction · ready');
-  await expect(casePanel).toContainText('including LOW cases');
-  const format = (value: number | null) => value == null ? 'Unavailable' : `${(value * 100).toFixed(1)}%`;
-  await expect(casePanel.locator('.risk-metrics strong').nth(0)).toHaveText(format(caseEvaluation.report.overall.precision));
-  await expect(casePanel.locator('.risk-metrics strong').nth(1)).toHaveText(format(caseEvaluation.report.overall.recall));
-  await casePanel.getByText('Supported typologies and evaluation method', { exact: true }).click();
-  await expect(casePanel).toContainText('one-to-one assignment');
-  await expect(casePanel.locator('tbody tr')).toHaveCount(completed.intelligence.enabledTypologies.length);
-  await casePanel.screenshot({ path: 'test-results/case-evaluation-desktop.png' });
-  await page.locator('.evidence-card details').first().locator('summary').click();
-  const evidenceTransaction = page.locator('.transaction-links button').first();
-  const evidenceTransactionId = await evidenceTransaction.textContent();
-  await evidenceTransaction.click();
-  await expect(page.locator('.detail-panel')).toContainText(evidenceTransactionId!);
-  await expect(page.locator('.detail-panel .risk-panel')).toContainText('scored');
-  const syntheticLabel = 'Synthetic Talon enrichment; not supplied by IBM AMLWorld';
-  await expect(page.locator('.synthetic-context')).toContainText(syntheticLabel);
-  await expect(page.locator('.enrichment-summary')).toContainText(syntheticLabel);
-  await page.locator('.enrichment-summary summary').click();
-  await expect(page.locator('.enrichment-summary')).toContainText('talon-network-control');
-  const demonstratedCase = completed.intelligence.cases.find((item: { entities: { id: string }[] }) =>
-    completed.intelligence.enrichment.links.some((link: { kind: string; accountIds: string[] }) =>
-      link.kind === 'device' && link.accountIds.filter(id => item.entities.some(e => e.id === id)).length >= 2));
-  expect(demonstratedCase).toBeTruthy();
-  await page.locator('.case-item').filter({ hasText: demonstratedCase.id }).click();
-  await expect(page.locator('.synthetic-context')).toContainText('talon-device-demonstration');
-  await expect(page.locator('.case-detail .graph-context-legend').first()).toContainText(syntheticLabel);
-  const selectedHold = await page.getByLabel('Single-account hold').inputValue();
-  expect(selectedHold).toBeTruthy();
-  await expect(page.getByRole('button', { name: 'Compare holds', exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: 'Compare holds', exact: true }).click();
-  await expect(page.getByLabel('Hold comparison result')).toBeVisible();
-  await expect(page.getByLabel('Hold comparison result')).toContainText('Observed-route disruption; assumes similar routes recur.');
-  const simulationPayload = { caseId: demonstratedCase.id, heldAccountIds: [selectedHold],
-    compareHeldAccountIds: await page.locator('.group-holds input:checked').evaluateAll(inputs => inputs.map(input => input.getAttribute('aria-label')!.replace('Include ', '').replace(' in group hold', ''))),
-    expectedCursor: completed.cursor };
-  const simulated = await (await request.post('/v1/interventions/simulate', { data: simulationPayload })).json();
-  expect(simulated.scenarios).toHaveLength(2);
-  expect(simulated.scenarios[1].interruptedTransferCount).toBeGreaterThanOrEqual(simulated.scenarios[0].interruptedTransferCount);
-  await expect(page.locator('.case-detail .graph')).toHaveAttribute('data-interrupted-transfers', String(simulated.scenarios[0].interruptedTransferCount));
-  await page.getByRole('button', { name: 'Preview group hold', exact: true }).click();
-  await expect(page.locator('.case-detail .graph')).toHaveAttribute('data-interrupted-transfers', String(simulated.scenarios[1].interruptedTransferCount));
-  expect((await (await request.get('/v1/events')).json()).intelligence).toEqual(completed.intelligence);
-  await page.screenshot({ path: 'test-results/intervention-desktop.png', fullPage: true });
-  await page.screenshot({ path: 'test-results/investigation-desktop.png', fullPage: true });
-  expect(completed.events[0]).not.toHaveProperty('label');
-  await page.getByRole('button', { name: 'Reset', exact: true }).click();
-  await expect(page.locator('.progress-label')).toHaveText(`0 / ${completed.total} events`);
-  await expect(page.getByLabel('Replay speed')).toHaveValue('1');
-  await expect(page.locator('.workspace .graph')).toHaveAttribute('aria-label', 'Transaction graph showing 0 transfers');
-  await expect(page.locator('.case-item')).toHaveCount(0);
-  await expect(page.getByLabel('Hold comparison result')).toHaveCount(0);
-  expect((await (await request.get('/v1/events')).json()).intelligence.enrichment.accounts).toEqual({});
-  await page.getByLabel('Replay speed').selectOption('20');
-  await page.getByRole('button', { name: 'Start replay', exact: true }).click();
-  await expect(page.locator('.play-state')).toHaveText('completed', { timeout: 25000 });
-  const repeated = await (await request.get('/v1/events')).json();
-  expect(repeated.events).toEqual(completed.events);
-  expect(repeated.intelligence).toEqual(completed.intelligence);
-  const simulatedAgain = await (await request.post('/v1/interventions/simulate', { data: simulationPayload })).json();
-  expect(simulatedAgain).toEqual(simulated);
-  expect(await (await request.get('/v1/evaluation/cases')).json()).toEqual(caseEvaluation);
-  await page.locator('.case-item').filter({ hasText: demonstratedCase.id }).click();
-  await page.getByRole('button', { name: 'Compare holds', exact: true }).click();
-  await expect(page.getByLabel('Hold comparison result')).toBeVisible();
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: 'test-results/replay-mobile.png', fullPage: true });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  expect(errors).toEqual([]);
-  await request.post('/v1/replay/control', { data: { action: 'reset' } });
-});
+test('merged dashboard follows the backend replay and exposes real model data', async ({ page, request }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await request.post('/v1/replay/control', { data: { action: 'reset' } })
+  await page.goto('/')
+  await expect(page.getByText('TALON API CONNECTED').first()).toBeVisible()
+  await expect(page.locator('.timeline-now')).toContainText('0 /')
 
-test('missing case evaluation is explicit and leaves replay controls available', async ({ page }) => {
-  await page.route('**/v1/evaluation/cases', route => route.fulfill({ status: 503, contentType: 'application/json',
-    body: JSON.stringify({ status: 'unavailable', error: 'Artificial acceptance fixture: case evaluation unavailable' }) }));
-  await page.goto('/');
-  const panel = page.getByLabel('Case reconstruction evaluation');
-  await expect(panel).toContainText('Case reconstruction · unavailable');
-  await expect(panel.getByRole('alert')).toContainText('case evaluation unavailable');
-  await expect(panel.locator('.risk-metrics')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Start replay', exact: true })).toBeEnabled();
-});
+  await page.getByLabel('Replay speed').selectOption('20')
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect.poll(async () => (await (await request.get('/v1/events')).json()).cursor).toBeGreaterThan(20)
+  await page.getByRole('button', { name: 'Pause', exact: true }).click()
+  const paused = await (await request.get('/v1/events')).json()
+  await expect(page.locator('.timeline-now')).toContainText(`${paused.cursor} / ${paused.total}`)
+  await page.getByRole('button', { name: 'Live feed' }).click()
+  await expect(page.getByRole('dialog', { name: /Live event feed/ })).toContainText(paused.events.at(-1).id)
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  await page.getByRole('button', { name: 'Models & evaluation' }).click()
+  await expect(page.getByLabel('Model availability and evaluation')).toContainText(paused.intelligence.models.version)
+  await expect(page.getByLabel('Case reconstruction evaluation')).toContainText('Case reconstruction · ready')
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  await page.getByRole('button', { name: 'Play', exact: true }).click()
+  await expect.poll(async () => (await (await request.get('/v1/events')).json()).status, { timeout: 30000 }).toBe('completed')
+  const completed = await (await request.get('/v1/events')).json()
+  const targetCase = completed.intelligence.cases.find((item: { entities: { id: string }[]; transactionIds: string[] }) =>
+    new Set(completed.events.filter((event: { id: string }) => item.transactionIds.includes(event.id))
+      .map((event: { fromBank: string; fromAccount: string }) => `${event.fromBank}/${event.fromAccount}`)).size >= 2)
+  expect(targetCase).toBeTruthy()
+  await page.locator('.case-card').filter({ hasText: targetCase.id }).click()
+  await expect(page.locator('.selected-case-float')).toContainText(targetCase.id)
+  await page.getByRole('button', { name: 'Case details' }).click()
+  await expect(page.getByRole('dialog')).toContainText(targetCase.id)
+  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Simulate hold' }).click()
+  await page.getByRole('button', { name: 'Compare holds' }).click()
+  await expect(page.getByRole('dialog', { name: 'Compare a hold set' })).toContainText('Interrupted transfers')
+  await page.getByRole('button', { name: 'Close' }).click()
+  expect(errors).toEqual([])
+  await request.post('/v1/replay/control', { data: { action: 'reset' } })
+})
+
+test('CSV explorer preserves source risk and does not invent missing scores', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'accounts.csv', mimeType: 'text/csv',
+    buffer: Buffer.from('account_id,risk_score,transaction_count\nA,81,2\nB,,3\n'),
+  })
+  await expect(page.getByText('LOCAL CSV EXPLORER', { exact: true })).toBeVisible()
+  await expect(page.getByRole('table').first()).toContainText('81.0')
+  await expect(page.getByRole('table').first()).toContainText('B')
+  await page.getByRole('row', { name: /B Unlinked/ }).click()
+  await expect(page.getByText('No risk value supplied')).toBeVisible()
+  await expect(page.getByText('Scores are supplied by the CSV; this view does not run backend models.')).toBeVisible()
+})

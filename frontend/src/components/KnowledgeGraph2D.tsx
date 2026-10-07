@@ -55,7 +55,7 @@ export default function KnowledgeGraph2D({ nodes, links, selectedTransactionId, 
       style: [
         { selector: 'node', style: {
           'background-color': '#5e7485', 'border-color': '#9bb0b8', 'border-width': 1,
-          label: 'data(label)', color: '#dce9e7', 'font-size': 9, 'font-weight': 600,
+          label: 'data(label)', color: '#dce9e7', 'font-size': 13, 'font-weight': 600,
           'text-wrap': 'wrap', 'text-max-width': '110px', 'text-valign': 'bottom', 'text-margin-y': 7,
           width: 25, height: 25, 'overlay-opacity': 0,
         } },
@@ -71,7 +71,7 @@ export default function KnowledgeGraph2D({ nodes, links, selectedTransactionId, 
         { selector: 'edge', style: {
           width: 1.8, 'line-color': '#4f9d90', 'target-arrow-color': '#72dbc4', 'target-arrow-shape': 'triangle',
           'curve-style': 'bezier', 'control-point-step-size': 30, 'line-cap': 'round',
-          label: 'data(label)', color: '#a9c9c5', 'font-size': 7, 'text-background-color': '#0e171e',
+          label: 'data(label)', color: '#a9c9c5', 'font-size': 11, 'text-background-color': '#0e171e',
           'text-background-opacity': 0.9, 'text-background-padding': '2px', 'text-rotation': 'autorotate',
         } },
         { selector: 'edge[kind = "involves"]', style: { width: 1, 'line-color': '#75899e', 'target-arrow-shape': 'none', label: '' } },
@@ -95,7 +95,7 @@ export default function KnowledgeGraph2D({ nodes, links, selectedTransactionId, 
       if (link) callbacks.current.onTransaction(link)
     })
     graph.current = cy
-    const observer = new ResizeObserver(() => cy.resize())
+    const observer = new ResizeObserver(() => { cy.resize(); if (cy.nodes().length) cy.fit(undefined, 65) })
     observer.observe(container.current)
     return () => { observer.disconnect(); cy.destroy(); graph.current = null; firstLayout.current = true }
   }, [])
@@ -136,7 +136,7 @@ export default function KnowledgeGraph2D({ nodes, links, selectedTransactionId, 
       cy.layout({ name: 'cose', animate: false, fit: true, randomize: false, padding: 55 }).run()
       firstLayout.current = false
     } else if (addedNode) {
-      cy.layout({ name: 'cose', animate: false, fit: false, randomize: false, padding: 35 }).run()
+      cy.layout({ name: 'cose', animate: false, fit: true, randomize: false, padding: 55 }).run()
     }
   }, [nodes, links, selectedTransactionId, replayTransactionId, heldAccountIds, interruptedTransferIds])
 
