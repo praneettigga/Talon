@@ -13,7 +13,7 @@ import { sendControl, type ReplaySpeed, type Snapshot } from './api'
 import { buildDashboardData } from './liveData'
 import type { AccountRecord, CaseRecord, DataTable, GraphLink, GraphNode, SourceRowRef, TableRecord, TransactionRecord } from './types'
 import { Investigation } from './Investigation'
-import { Models } from './Risk'
+import { Models, Risk } from './Risk'
 import { EnrichmentControls } from './Enrichment'
 import { CaseEvaluation } from './Evaluation'
 import ImportedDatasetWorkspace, { DetectionProgress } from './components/ImportedDatasetWorkspace'
@@ -98,6 +98,7 @@ export default function App() {
   const [showAnalytics, setShowAnalytics] = useState(false)
   const [showFeed, setShowFeed] = useState(false)
   const [dataOpen, setDataOpen] = useState(false)
+  const [activePage, setActivePage] = useState<'network' | 'activity' | 'investigations' | 'risk' | 'intervention'>('network')
   const [webgl, setWebgl] = useState(true)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [holdPreview, setHoldPreview] = useState<{ heldAccountIds: string[]; interruptedTransferIds: string[] } | null>(null)
@@ -154,9 +155,10 @@ export default function App() {
   const activeCaseIdResolved = activeCase?.case_id ?? ''
   const activeCaseTransactions = useMemo(() => transactions.filter(transaction => transaction.case_id === activeCaseIdResolved).sort((a, b) => a.timestamp.localeCompare(b.timestamp)), [transactions, activeCaseIdResolved])
   const activeEvidence = evidence.filter(item => item.case_id === activeCaseIdResolved)
-  const topEvidence = activeEvidence.slice(0, 2)
   const currentTransaction = transactions.find(item => item.transaction_id === snapshot?.events.at(-1)?.id) ?? null
   const selectedTransaction = transactions.find(item => item.transaction_id === selectedTransactionId) ?? currentTransaction
+  const selectedDecision = snapshot?.intelligence.decisions.find(item => item.transactionId === selectedTransaction?.transaction_id)?.risk
+  const selectedEntityRisk = focusedAccountId ? snapshot?.intelligence.entityRisks[focusedAccountId] : undefined
   const highRiskCount = accounts.filter(account => account.risk_score != null && account.risk_score >= 80).length
 
   useEffect(() => {
@@ -277,7 +279,7 @@ export default function App() {
     setActiveTable(ref.file)
   }, [])
 
-  const handleCase = useCallback((caseId: string) => {
+  const handleCase = useCallback((caseId: string, openSourceRow = true) => {
     const found = cases.find(item => item.case_id === caseId || snapshot?.intelligence.cases.find(candidate => candidate.id === item.case_id)?.mergedCaseIds.includes(caseId))
     if (!found) return
     setActiveCaseId(found.case_id)
@@ -285,8 +287,11 @@ export default function App() {
     setFocusedTransactionId('')
     setGraphLevel('case')
     setView('network')
-    const row = tables.find(item => item.name === 'cases.json')?.rows.find(item => item.id === found.case_id)
-    if (row) openSource(sourceRef('cases.json', row))
+    setActivePage('network')
+    if (openSourceRow) {
+      const row = tables.find(item => item.name === 'cases.json')?.rows.find(item => item.id === found.case_id)
+      if (row) openSource(sourceRef('cases.json', row))
+    }
   }, [cases, snapshot?.intelligence.cases, tables, openSource])
 
   const handleAccount = useCallback((account: AccountRecord | GraphNode) => {
@@ -312,6 +317,7 @@ export default function App() {
     setView(record.case_id ? 'flow' : 'network')
     setGraphLevel(record.case_id ? 'case' : 'overview')
     setActiveCaseId(record.case_id || null)
+    setActivePage('network')
     const row = tables.find(item => item.name === 'events.json')?.rows.find(item => item.id === record.transaction_id)
     if (row) openSource(sourceRef('events.json', row))
   }, [tables, openSource])
@@ -375,22 +381,38 @@ export default function App() {
         <div className="brand-lockup"><div className="brand-mark"><Shield size={18} strokeWidth={1.8} /><span /></div><div><b>TALON</b><small>NETWORK INTELLIGENCE</small></div></div>
         <div className="topbar-divider" />
         <div className="workspace-crumb"><span className="crumb-muted">INVESTIGATIONS</span><ChevronRight size={13} /><span>{activeCase?.case_id ?? 'Network overview'}</span></div>
+        <nav className="product-nav" aria-label="Workspace pages">
+          <button className={activePage === 'network' ? 'active' : ''} onClick={() => setActivePage('network')}>Graph / cases / dataset</button>
+          <button className={activePage === 'activity' ? 'active' : ''} onClick={() => setActivePage('activity')}>Activity</button>
+          <button className={activePage === 'investigations' ? 'active' : ''} onClick={() => setActivePage('investigations')}>Investigation</button>
+          <button className={activePage === 'risk' ? 'active' : ''} onClick={() => setActivePage('risk')}>Risk & evaluation</button>
+          <button className={activePage === 'intervention' ? 'active' : ''} onClick={() => setActivePage('intervention')}>Interventions</button>
+        </nav>
         <div className="topbar-right"><div className={`stream-status ${connected ? '' : 'stream-offline'}`}><span className="live-dot" /> {connected ? 'TALON API CONNECTED' : 'CONNECTING TO TALON'}</div><button className="icon-button top-icon" title="Notifications"><Bell size={16} /><i /></button><div className="avatar">AD</div></div>
       </header>
       {importError && <div className="import-error-banner" role="alert"><span>{importError}</span><button onClick={() => setImportError('')} aria-label="Dismiss import error"><X size={13} /></button></div>}
 
-      <main className="dashboard-grid">
+      <main className={`dashboard-grid ${activePage === 'network' ? 'dashboard-network' : 'dashboard-section'}`}>
         <aside className="case-sidebar">
           <div className="sidebar-intro"><div><span className="eyebrow">INVESTIGATION DESK</span><h1>Case network</h1></div><button className="icon-button tiny" title="Workspace help"><CircleHelp size={15} /></button></div>
           <div className="case-stat-row"><div className="stat-mini"><span>OPEN CASES</span><strong>{String(cases.length).padStart(2, '0')}</strong></div><div className="stat-mini"><span>HIGH RISK</span><strong className="coral-text">{String(highRiskCount).padStart(2, '0')}</strong></div><div className="stat-mini"><span>OBSERVED ACCTS</span><strong>{String(accounts.length).padStart(2, '0')}</strong></div></div>
           <div className="sidebar-section-head"><span className="eyebrow">ACTIVE QUEUE</span><button className="icon-button tiny" title="Sort by severity and risk" onClick={() => setSortDescending(value => !value)}><ArrowDownUp size={14} /></button></div>
           <label className="case-search"><Search size={14} /><input value={caseSearch} onChange={event => setCaseSearch(event.target.value)} placeholder="Search cases" /><kbd>⌘ F</kbd></label>
           <div className="case-list">
-            {filteredCases.map((item, index) => <button key={item.case_id} className={`case-card ${activeCaseIdResolved === item.case_id ? 'case-card-active' : ''}`} onClick={() => handleCase(item.case_id)}>
+            {filteredCases.map((item, index) => <button key={item.case_id} className={`case-card ${activeCaseIdResolved === item.case_id ? 'case-card-active' : ''}`} onClick={() => {
+              if (activeCaseIdResolved === item.case_id) {
+                setActiveCaseId(null)
+                setFocusedAccountId('')
+                setFocusedTransactionId('')
+                setGraphLevel('overview')
+                setView('network')
+              } else handleCase(item.case_id, false)
+            }} aria-expanded={activeCaseIdResolved === item.case_id}>
               <div className="case-card-top"><span className={`severity-tag ${severityClass[item.severity]}`}>{item.severity}</span><span className="case-rank">#{String(index + 1).padStart(2, '0')}</span></div>
               <div className="case-card-title">{item.case_id}<RiskPill score={item.risk_score} compact /></div>
               <div className="case-card-typology"><span className="typology-icon"><Activity size={12} /></span>{item.typology}</div>
               <div className="case-card-foot"><span>{item.entity_count} accounts</span><span>{item.transaction_count} transfers</span><span>{formatTime(item.last_seen)}</span></div>
+              {activeCaseIdResolved === item.case_id && <div className="case-card-details"><span>Case summary</span><p>{item.summary}</p><small>Selected in the network view · click again to collapse</small></div>}
               <span className="card-active-line" />
             </button>)}
             {filteredCases.length === 0 && <div className="empty-state-small">{snapshot?.status === 'unavailable' ? 'Talon replay is unavailable.' : cases.length ? 'No cases match these filters.' : 'Cases appear as observed transactions form supported structures.'}</div>}
@@ -422,7 +444,6 @@ export default function App() {
                 <NetworkGraph nodes={visibleGraph.nodes} links={visibleGraph.links} activeCaseId={activeCaseIdResolved} replayTransactionId={latestEventId} selectedTransactionId={selectedTransactionId} reducedMotion={reducedMotion} heatmap={heatmap} heldAccountIds={holdPreview?.heldAccountIds ?? emptyIds} interruptedTransferIds={holdPreview?.interruptedTransferIds ?? emptyIds} onCase={handleCase} onAccount={handleAccount} onContext={handleContext} onTransaction={handleTransaction} />
               </Suspense> : <KnowledgeGraph2D nodes={visibleGraph.nodes} links={visibleGraph.links} selectedTransactionId={selectedTransactionId} replayTransactionId={latestEventId} heldAccountIds={holdPreview?.heldAccountIds ?? emptyIds} interruptedTransferIds={holdPreview?.interruptedTransferIds ?? emptyIds} onCase={handleCase} onAccount={handleAccount} onContext={handleContext} onTransaction={handleTransaction} />}
               <div className="graph-hud"><span className="hud-pulse" /> {heatmap ? 'RISK HEATMAP' : 'NETWORK ACTIVE'} <span className="hud-separator">/</span> {visibleGraph.links.filter(link => link.kind === 'transaction').length} TRANSFERS</div>
-              {activeCase && <div className="selected-case-float"><div className="selected-case-top"><span className={`severity-tag ${severityClass[activeCase.severity]}`}>{activeCase.severity}</span><span className="case-id-float">{activeCase.case_id}</span><RiskPill score={activeCase.risk_score} compact /></div><strong>{activeCase.typology}</strong><p>{activeCase.summary}</p><div className="float-evidence">{topEvidence.map(item => <span key={item.evidence_id}><Sparkles size={11} /> {item.value}</span>)}</div></div>}
               <div className="graph-instruction"><span className="mouse-glyph">⌖</span> Drag to orbit <b>·</b> Scroll to zoom <b>·</b> Select a case or account to explore</div>
               {snapshot && <GraphInspector activeCase={activeCase} account={focusedAccount} accounts={visibleAccounts} transactions={transactions} selectedTransaction={selectedTransaction} snapshot={snapshot} onSelectAccount={handleAccount} />}
             </> : <>
@@ -445,6 +466,21 @@ export default function App() {
         </section>
 
         <DataRail tables={tables} activeTable={activeTable} source={selectedSource} onTable={file => setActiveTable(file)} onRow={handleTableRow} open={dataOpen} onClose={() => setDataOpen(false)} dataset={snapshot?.dataset} cursor={snapshot?.cursor} total={snapshot?.total} />
+
+        {activePage === 'activity' && <section className="subpage" aria-label="Activity and transfer details">
+          <div className="subpage-heading"><div><span className="eyebrow">OBSERVED ACTIVITY</span><h1>Live event feed</h1><p>The latest 50 observed transfers, with source-row lineage and score explanations kept together.</p></div><button className="button-outline" onClick={() => setActivePage('network')}>Open graph</button></div>
+          <div className="summary-strip"><div><span>EVENT TIME</span><strong>{formatTime(snapshot?.eventTime)}</strong></div><div><span>ACCOUNTS OBSERVED</span><strong>{accounts.length}</strong></div><div><span>REPLAY MODE</span><strong>Curated demonstration</strong></div><div><span>EVENTS REPLAYED</span><strong>{snapshot ? `${snapshot.cursor} / ${snapshot.total}` : '—'}</strong></div></div>
+          <div className="subpage-columns activity-columns"><section className="subpage-card feed-card"><div className="subpage-card-head"><div><span className="eyebrow">TRANSFER STREAM</span><h2>Newest first</h2></div><span>{Math.min(snapshot?.events.length ?? 0, 50)} visible</span></div><div className="live-feed-list persistent-feed">{[...(snapshot?.events ?? [])].slice(-50).reverse().map(event => { const record = transactions.find(item => item.transaction_id === event.id); return <button className={`live-feed-row ${selectedTransaction?.transaction_id === event.id ? 'selected' : ''}`} key={event.id} onClick={() => record && selectObservedEvent(record)}><span className="event-top"><strong>{event.id}</strong><time>{formatTime(event.timestamp)}</time></span><span className="live-feed-route">{event.fromBank}:{event.fromAccount} <b>→</b> {event.toBank}:{event.toAccount}</span><span className="muted">{event.amountPaid} {event.paymentCurrency} · {event.paymentFormat} · source row {event.sourceRow}</span></button> })}{!snapshot?.events.length && <p className="empty-state-small">Start replay to populate the observed event feed.</p>}</div></section>
+            <section className="subpage-card detail-card"><div className="subpage-card-head"><div><span className="eyebrow">SELECTED TRANSFER</span><h2>{selectedTransaction?.transaction_id ?? 'Choose a transfer'}</h2></div>{selectedTransaction && <RiskPill score={selectedTransaction.risk_score} />}</div>{selectedTransaction ? <><dl className="transfer-detail"><div><dt>Timestamp</dt><dd>{selectedTransaction.timestamp.replace('T', ' ')}</dd></div><div><dt>Source row</dt><dd>{selectedTransaction.source_row}</dd></div><div><dt>Sender</dt><dd>{selectedTransaction.source_account}</dd></div><div><dt>Recipient</dt><dd>{selectedTransaction.destination_account}</dd></div><div><dt>Amount paid</dt><dd>{selectedTransaction.amount} {selectedTransaction.currency}</dd></div><div><dt>Amount received</dt><dd>{selectedTransaction.received_amount} {selectedTransaction.receiving_currency}</dd></div><div><dt>Payment format</dt><dd>{selectedTransaction.payment_format}</dd></div></dl><div className="inline-risk"><span className="eyebrow">RISK EXPLANATION</span><Risk risk={selectedDecision} /></div></> : <p className="empty-state-small">Select a transfer to view its payment and scoring context.</p>}</section></div>
+        </section>}
+
+        {activePage === 'investigations' && <section className="subpage investigation-page" aria-label="Investigation detail"><div className="subpage-heading"><div><span className="eyebrow">CASEWORK</span><h1>Investigation detail</h1><p>Evidence, timeline, account history, and infrastructure context in one review surface.</p></div><button className="button-outline" onClick={() => setActivePage('network')}>Return to network</button></div>{snapshot ? <Investigation intelligence={snapshot.intelligence} events={snapshot.events} selectedTransaction={selectedTransactionId || null} onSelectTransaction={id => { setSelectedTransactionId(id); const record = transactions.find(item => item.transaction_id === id); if (record) selectObservedEvent(record) }} replayStatus={snapshot.status} initialCaseId={activeCaseIdResolved || null} /> : <p className="empty-state-small">Waiting for the replay snapshot.</p>}</section>}
+
+        {activePage === 'risk' && <section className="subpage" aria-label="Risk and evaluation"><div className="subpage-heading"><div><span className="eyebrow">SCORING GOVERNANCE</span><h1>Risk & evaluation</h1><p>Scores prioritize review. They are not fraud probabilities or conclusive findings.</p></div><button className="button-outline" onClick={() => setActivePage('network')}>Explore graph</button></div>
+          <section className="model-scoreboard" aria-label="Current model scores"><div className="scoreboard-intro"><span className="eyebrow">CURRENT TRANSACTION SCORECARD</span><b>{selectedTransaction?.transaction_id ?? 'Select a transfer'}</b><small>Component evidence for the current selection</small></div><div><span>OVERALL RISK</span><strong>{selectedDecision?.riskScore?.toFixed(1) ?? '—'}<small>/ 100</small></strong><p>Prioritization score</p></div><div><span>BEHAVIOUR ANOMALY</span><strong>{selectedDecision?.behaviourScore?.toFixed(3) ?? '—'}<small>/ 1</small></strong><p>Historical account unusualness</p></div><div><span>IBM GIN RELATIONAL</span><strong>{selectedDecision?.ginScore?.toFixed(3) ?? '—'}<small>/ 1</small></strong><p>Learned network evidence</p></div><div><span>ENTITY RISK</span><strong>{selectedEntityRisk?.riskScore?.toFixed(1) ?? '—'}<small>/ 100</small></strong><p>Recent account aggregate</p></div></section>
+          <div className="subpage-columns risk-columns"><div className="stacked-cards"><section className="subpage-card"><span className="eyebrow">DECISION EXPLANATION</span><h2>{selectedTransaction ? `Transaction · ${selectedTransaction.transaction_id}` : 'Transaction risk'}</h2><Risk risk={selectedDecision} /></section><section className="subpage-card"><span className="eyebrow">ENTITY RISK</span><h2>{focusedAccountId || 'Select an account on the graph'}</h2><Risk risk={selectedEntityRisk} /></section></div><div className="analytics-stack persistent-analytics">{snapshot && <Models models={snapshot.intelligence.models} expanded />}<CaseEvaluation expanded />{snapshot && <EnrichmentControls context={snapshot.intelligence.enrichment} />}</div></div></section>}
+
+        {activePage === 'intervention' && <section className="subpage" aria-label="Intervention comparison"><div className="subpage-heading"><div><span className="eyebrow">OBSERVED-ROUTE DISRUPTION</span><h1>Intervention comparison</h1><p>Evaluate a proposed account hold against the observed network without taking action.</p></div><button className="button-outline" onClick={() => setActivePage('network')}>Return to graph</button></div><section className="intervention-landing"><div className="intervention-intro-card"><span className="eyebrow">SIMULATION SCOPE</span><h2>{activeCase ? activeCase.case_id : 'Choose a case from the graph'}</h2><p>{activeCase ? `${activeCase.typology} · ${activeCase.entity_count} involved accounts · ${activeCase.transaction_count} linked transfers` : 'A case supplies the observed accounts and transfers for a hold comparison.'}</p><ul><li>Compare one account with an additional group hold.</li><li>See interrupted links, unreachable downstream accounts, and remaining routes.</li><li>Graph markings are previews only; no payment or hold is executed.</li></ul><button className="play-button" disabled={!activeCase || !snapshot || !canControl} onClick={() => setShowWhatIf(true)}><GitCompareArrows size={14} /> Compare observed routes</button></div><div className="intervention-guide"><span className="eyebrow">READING A RESULT</span><div><b>Held accounts</b><span>The selected containment set.</span></div><div><b>Interrupted transfers</b><span>Observed links blocked by that set.</span></div><div><b>Remaining alternate routes</b><span>Witnesses that still reach downstream accounts.</span></div><div><b>Directly touched accounts</b><span>Immediate counterparties of held accounts.</span></div></div></section></section>}
       </main>
 
       <footer className="app-footer"><span>{snapshot?.dataset ?? 'Waiting for backend snapshot'} <b>·</b> Scores prioritize investigation; they do not establish fraud</span><button onClick={() => setShowAnalytics(true)}><BarChart3 size={12} /> Models & evaluation</button><span className="footer-version">v1.0.0</span></footer>

@@ -28,7 +28,7 @@ export function Risk({ risk }: { risk: DecisionRisk | EntityRisk | undefined }) 
   </div>;
 }
 
-export function Models({ models }: { models: ModelStatus }) {
+export function Models({ models, expanded = false }: { models: ModelStatus; expanded?: boolean }) {
   const report = models.evaluation;
   return <section className="panel model-status" aria-label="Model availability and evaluation">
     <h2>Learned scoring · {models.status}</h2>
@@ -36,7 +36,7 @@ export function Models({ models }: { models: ModelStatus }) {
       <p className="muted">Isolation Forest · {models.graphModel} · XGBoost · {models.version}<br />
         Frozen scoring starts {models.availableFrom?.replace('T', ' ')}. Earlier events remain unscored.
         {' '}Review threshold {score(models.reviewThreshold)} / 100 also requires supported structure and model corroboration.</p>
-      {report && <details className="evaluation"><summary>Frozen temporal test evaluation</summary>
+      {report && <details className="evaluation" open={expanded}><summary>Frozen temporal test evaluation</summary>
         <p className="muted">Bounded case-enriched IBM AMLWorld synthetic subset; these are not full-benchmark estimates.</p>
         <table><thead><tr><th>Test metric</th><th>Risk threshold</th><th>With review gate</th></tr></thead><tbody>
           <tr><td>Transactions / labelled positives</td><td colSpan={2}>{report.test.rows} / {report.test.positives}</td></tr>

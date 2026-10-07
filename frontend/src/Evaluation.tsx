@@ -15,7 +15,7 @@ interface Report {
 type EvaluationState = { status: 'ready'; report: Report } | { status: 'unavailable'; error: string };
 const fraction = (value: number | null) => value == null ? 'Unavailable' : `${(value * 100).toFixed(1)}%`;
 
-export function CaseEvaluation() {
+export function CaseEvaluation({ expanded = false }: { expanded?: boolean }) {
   const [state, setState] = useState<EvaluationState | null>(null);
   useEffect(() => {
     const controller = new AbortController();
@@ -35,7 +35,7 @@ export function CaseEvaluation() {
         <div><span>Mean matched Jaccard</span><strong>{report.overall.meanMatchedJaccard?.toFixed(3) ?? 'Unavailable'}</strong></div></div>
       <p className="muted">{report.overall.matched} matched / {report.overall.detectedCases} detected cases / {report.overall.groundTruthAttempts} supported attempts.
         {' '}{report.overall.unmatchedDetected} unmatched cases; {report.overall.missedAttempts} missed attempts.</p>
-      <details className="evaluation"><summary>Supported typologies and evaluation method</summary>
+      <details className="evaluation" open={expanded}><summary>Supported typologies and evaluation method</summary>
         <table><thead><tr><th>Typology</th><th>Detected / attempts / matched</th><th>Precision</th><th>Recall</th><th>Jaccard</th></tr></thead>
           <tbody>{Object.entries(report.byTypology).map(([name, m]) => <tr key={name}><td>{name}</td>
             <td>{m.detectedCases} / {m.groundTruthAttempts} / {m.matched}</td><td>{fraction(m.precision)}</td><td>{fraction(m.recall)}</td>
