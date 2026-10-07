@@ -17,7 +17,7 @@ export const artifactSchema = z.object({
   const rows = new Set<number>();
   events.forEach((event, index) => {
     const previous = events[index - 1];
-    if (ids.has(event.id) || rows.has(event.sourceRow) || event.id !== `hi-small:${event.sourceRow}` ||
+    if (ids.has(event.id) || rows.has(event.sourceRow) ||
         (previous && (previous.timestamp > event.timestamp ||
           (previous.timestamp === event.timestamp && previous.sourceRow > event.sourceRow)))) {
       context.addIssue({ code: 'custom', message: 'Events must have unique source IDs and event-time/source-row order' });
@@ -29,7 +29,7 @@ export const controlSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('start') }).strict(),
   z.object({ action: z.literal('pause') }).strict(),
   z.object({ action: z.literal('reset') }).strict(),
-  z.object({ action: z.literal('speed'), speed: z.union([z.literal(1), z.literal(5), z.literal(20)]) }).strict(),
+  z.object({ action: z.literal('speed'), speed: z.union([z.literal(1), z.literal(5), z.literal(20), z.literal(30)]) }).strict(),
 ]);
 export type ReplayEvent = z.infer<typeof eventSchema>;
 export type Artifact = z.infer<typeof artifactSchema>;

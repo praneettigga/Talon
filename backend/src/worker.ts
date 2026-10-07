@@ -72,12 +72,13 @@ export class PythonWorker implements IntelligenceWorker {
       this.process.stdin.write(JSON.stringify({ id, ...command }) + '\n');
     });
   }
-  initialize(sourceSha256: string, modelsDirectory?: string, context: { replaySha256?: string; enrichmentPath?: string } = {}) {
+  initialize(sourceSha256: string, modelsDirectory?: string, context: { replaySha256?: string; enrichmentPath?: string; manifest?: string | null; enabledTypologies?: string[] } = {}) {
     return this.request({ command: 'init', sourceSha256,
       modelsDirectory: modelsDirectory ?? process.env.TALON_MODELS_DIR ?? fileURLToPath(new URL('../../data/models/current', import.meta.url)),
       replaySha256: context.replaySha256,
       enrichmentPath: context.enrichmentPath ?? process.env.TALON_ENRICHMENT_FILE ?? fileURLToPath(new URL('../../data/replay/talon_device_context.csv', import.meta.url)),
-      manifest: fileURLToPath(new URL('../../docs/data/hi-small-manifest.json', import.meta.url)) });
+      manifest: context.manifest === undefined ? fileURLToPath(new URL('../../docs/data/hi-small-manifest.json', import.meta.url)) : context.manifest,
+      enabledTypologies: context.enabledTypologies });
   }
   event(event: ReplayEvent) { return this.request({ command: 'event', event }); }
   reset() { return this.request({ command: 'reset' }); }

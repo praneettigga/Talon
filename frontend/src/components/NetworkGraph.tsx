@@ -51,7 +51,9 @@ export default function NetworkGraph({ nodes, links, activeCaseId, replayTransac
   const containerRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink> | undefined>(undefined)
   const fittedGraph = useRef('')
+  const zoomLevel = useRef(50)
   const [size, setSize] = useState({ width: 0, height: 0 })
+  const [zoom, setZoom] = useState(50)
   const graphKey = `${nodes.map(node => node.id).join('|')}::${links.length}`
   useEffect(() => {
     const container = containerRef.current
@@ -77,6 +79,28 @@ export default function NetworkGraph({ nodes, links, activeCaseId, replayTransac
   // react-force-graph mutates node/link objects while running its force simulation.
   // Keep that mutable state inside this renderer instead of corrupting adapter data.
   const graphData = useMemo(() => ({ nodes: nodes.map(node => ({ ...node })), links: links.map(link => ({ ...link })) }), [nodes, links])
+  const updateZoom = (next: number) => {
+    const graph = graphRef.current
+    const camera = graph?.camera()
+    const controls = graph?.controls() as { target?: { x: number; y: number; z: number } } | undefined
+    if (!graph || !camera) return
+    const target = controls?.target ?? { x: 0, y: 0, z: 0 }
+    // Each slider step changes the camera distance by ~5.5%, preserving the
+    // current orbit and look-at point instead of snapping the graph view.
+    const scale = Math.pow(1.055, zoomLevel.current - next)
+    graph.cameraPosition({
+      x: target.x + (camera.position.x - target.x) * scale,
+      y: target.y + (camera.position.y - target.y) * scale,
+      z: target.z + (camera.position.z - target.z) * scale,
+    }, target)
+    zoomLevel.current = next
+    setZoom(next)
+  }
+  const fitNetwork = () => {
+    graphRef.current?.zoomToFit(650, 65)
+    zoomLevel.current = 50
+    setZoom(50)
+  }
 
   return (
     <div className="network-canvas" ref={containerRef}>
@@ -116,9 +140,11 @@ export default function NetworkGraph({ nodes, links, activeCaseId, replayTransac
         enableNodeDrag
         enableNavigationControls
       />
-      <button className="graph-reset" onClick={() => graphRef.current?.zoomToFit(650, 65)} title="Fit all visible nodes">
-        Fit network
-      </button>
+      <div className="graph-zoom-controls">
+        <label htmlFor="network-zoom">Zoom</label>
+        <span aria-hidden="true">+</span><input id="network-zoom" aria-label="Graph zoom" type="range" min="0" max="100" value={zoom} onChange={event => updateZoom(Number(event.target.value))} /><span aria-hidden="true">−</span>
+        <button className="graph-reset" onClick={fitNetwork} title="Fit all visible nodes">Fit network</button>
+      </div>
     </div>
   )
 }

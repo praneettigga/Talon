@@ -23,7 +23,13 @@ const server = app.listen(port, '127.0.0.1');
 server.once('listening', () => {
   console.log(`Talon API: http://127.0.0.1:${port}`);
 });
-server.on('error', error => { console.error(`Talon API failed to listen: ${error.message}`); replay.dispose(); process.exitCode = 1; });
+server.on('error', (error: NodeJS.ErrnoException) => {
+  console.error(error.code === 'EADDRINUSE'
+    ? `Talon API port ${port} is already occupied. Stop the other backend terminal (Ctrl+C), then restart this one. Run only one API: root npm run dev already starts it.`
+    : `Talon API failed to listen: ${error.message}`);
+  replay.dispose();
+  process.exitCode = 1;
+});
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => { replay.dispose(); server.close(); server.closeAllConnections(); });
 }

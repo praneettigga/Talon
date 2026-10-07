@@ -1,3 +1,4 @@
+import { Term } from './Term'
 import type { Snapshot } from '../api'
 import type { AccountRecord, CaseRecord, TransactionRecord } from '../types'
 import { Risk } from '../Risk'
@@ -68,9 +69,9 @@ export default function GraphInspector({ activeCase, account, accounts, transact
       <span className="inspector-meta">{selectedTransaction.amount} {selectedTransaction.currency} · {selectedTransaction.timestamp.replace('T', ' ')}</span>
       <details><summary>Source fields and model explanation</summary>
         <dl className="inspector-fields">
-          <div><dt>Source row</dt><dd>{selectedTransaction.source_row}</dd></div>
+          <div><dt><Term>Source row</Term></dt><dd>{selectedTransaction.source_row}</dd></div>
           <div><dt>Received</dt><dd>{selectedTransaction.received_amount} {selectedTransaction.receiving_currency}</dd></div>
-          <div><dt>Payment format</dt><dd>{selectedTransaction.payment_format}</dd></div>
+          <div><dt><Term>Payment format</Term></dt><dd>{selectedTransaction.payment_format}</dd></div>
           <div><dt>Decision reason</dt><dd>{selectedTransaction.reason}</dd></div>
         </dl>
         <Risk risk={snapshot.intelligence.decisions.find(item => item.transactionId === selectedTransaction.transaction_id)?.risk} />

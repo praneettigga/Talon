@@ -1,7 +1,8 @@
+import { Term } from './components/Term'
 import type { DeviceContext, EnrichmentSnapshot, InfrastructureLink } from './api';
 
 export function Enrichment({ context, links, account }: { context: EnrichmentSnapshot; links: InfrastructureLink[]; account?: DeviceContext }) {
-  return <section className="synthetic-context" aria-label="Synthetic infrastructure context"><h3>Synthetic infrastructure context</h3>
+  return <section className="synthetic-context" aria-label="Synthetic infrastructure context"><h3><Term>Synthetic infrastructure context</Term></h3>
     <p className="muted">{context.label}. Context only; frozen model scores and severity are unchanged.</p>
     {context.status === 'unavailable' ? <p className="muted">Unavailable: {context.error}</p> : <>
       {account && <p className="muted">{account.accountId}: {account.deviceId} · {account.ipCluster} · {account.location}<br />
@@ -17,7 +18,7 @@ export function Enrichment({ context, links, account }: { context: EnrichmentSna
 
 export function EnrichmentControls({ context }: { context: EnrichmentSnapshot }) {
   const controls = context.links.filter(link => link.scenarios.includes('shared-network control'));
-  return <section className="panel enrichment-summary" aria-label="Synthetic context controls"><h2>Synthetic device/network context · {context.status}</h2>
+  return <section className="panel enrichment-summary" aria-label="Synthetic context controls"><h2><Term term="Synthetic infrastructure context">Synthetic device/network context</Term> · {context.status}</h2>
     <p className="muted">{context.label}. Sharing alone creates no alert and does not change frozen model scores or severity.</p>
     {context.status === 'unavailable' ? <p className="muted">{context.error}</p> : <details><summary>Legitimate-sharing demonstration control · {controls.length} observed shared network</summary>
       <p className="muted">This is a synthetic control scenario, not a classification of the IBM source accounts.</p>

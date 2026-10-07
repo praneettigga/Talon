@@ -1,3 +1,4 @@
+import { Term } from './Term'
 import { useMemo, useState } from 'react'
 import { ChevronDown, Database, FileSpreadsheet, Search, Table2, X } from 'lucide-react'
 import type { DataTable, SourceRowRef, TableRecord } from '../types'
@@ -68,7 +69,7 @@ export default function DataRail({ tables, activeTable, source, onTable, onRow, 
         )}
         <div className="table-wrap">
           <table>
-            <thead><tr><th className="row-index">#</th>{columns.map((column) => <th key={column}>{column.replaceAll('_', ' ')}</th>)}</tr></thead>
+            <thead><tr><th className="row-index">#</th>{columns.map((column) => <th key={column}><Term>{column.replaceAll('_', ' ')}</Term></th>)}</tr></thead>
             <tbody>
               {rows.map((row, index) => {
                 const selected = source?.file === table.name && source.id === row.id

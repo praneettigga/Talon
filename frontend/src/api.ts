@@ -1,5 +1,5 @@
 export type ReplayStatus = 'paused' | 'running' | 'completed' | 'unavailable'
-export type ReplaySpeed = 1 | 5 | 20
+export type ReplaySpeed = 1 | 5 | 20 | 30
 
 export interface ReplayEvent {
   id: string
@@ -239,6 +239,21 @@ export async function sendControl(control: Control): Promise<void> {
   })
   const body = await response.json().catch(() => ({})) as { error?: string }
   if (!response.ok) throw new Error(body.error ?? `Replay control failed (${response.status})`)
+}
+
+export async function uploadAmlworldDataset(files: File[]): Promise<void> {
+  const clear = await fetch('/v1/datasets/reset-upload', { method: 'POST' })
+  if (!clear.ok) throw new Error('Could not clear the previous dataset upload')
+  for (const file of files) {
+    const response = await fetch(`/v1/datasets/files/${encodeURIComponent(file.name)}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(file.size) }, body: file,
+    })
+    const body = await response.json().catch(() => ({})) as { error?: string }
+    if (!response.ok) throw new Error(body.error ?? `Could not upload ${file.name}`)
+  }
+  const response = await fetch('/v1/datasets/prepare', { method: 'POST' })
+  const body = await response.json().catch(() => ({})) as { error?: string }
+  if (!response.ok) throw new Error(body.error ?? 'Could not prepare the uploaded dataset')
 }
 
 export async function simulateHolds(input: {

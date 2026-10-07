@@ -1,3 +1,4 @@
+import { Term } from './components/Term'
 import { useEffect, useState } from 'react';
 
 interface Metrics {
@@ -27,25 +28,23 @@ export function CaseEvaluation({ expanded = false }: { expanded?: boolean }) {
     return () => controller.abort();
   }, []);
   const report = state?.status === 'ready' ? state.report : null;
-  return <section className="panel model-status" aria-label="Case reconstruction evaluation"><h2>Case reconstruction · {state?.status ?? 'loading'}</h2>
+  return <section className="panel model-status" aria-label="Case reconstruction evaluation"><div className="evaluation-section-heading"><div><span className="eyebrow">02 / CASE QUALITY</span><h2><Term>Case reconstruction</Term></h2></div><span className={`evaluation-status ${state?.status ?? 'loading'}`}>{state?.status ?? 'loading'}</span></div>
+    {!state && <p className="muted" role="status">Loading case evaluation metrics…</p>}
     {state?.status === 'unavailable' && <p role="alert" className="notice">{state.error}</p>}
     {report && <><p className="muted">{report.scope} This frozen evaluation is separate from the curated live demo. Test window {report.window.start.replace('T', ' ')} → {report.window.endExclusive.replace('T', ' ')} (end exclusive).</p>
-      <div className="risk-metrics"><div><span>Case precision</span><strong>{fraction(report.overall.precision)}</strong></div>
-        <div><span>Case recall</span><strong>{fraction(report.overall.recall)}</strong></div>
-        <div><span>Mean matched Jaccard</span><strong>{report.overall.meanMatchedJaccard?.toFixed(3) ?? 'Unavailable'}</strong></div></div>
+      <div className="risk-metrics"><div><span><Term>Case precision</Term></span><strong>{fraction(report.overall.precision)}</strong></div>
+        <div><span><Term>Case recall</Term></span><strong>{fraction(report.overall.recall)}</strong></div>
+        <div><span><Term>Mean matched Jaccard</Term></span><strong>{report.overall.meanMatchedJaccard?.toFixed(3) ?? 'Unavailable'}</strong></div></div>
       <p className="muted">{report.overall.matched} matched / {report.overall.detectedCases} detected cases / {report.overall.groundTruthAttempts} supported attempts.
         {' '}{report.overall.unmatchedDetected} unmatched cases; {report.overall.missedAttempts} missed attempts.</p>
       <details className="evaluation" open={expanded}><summary>Supported typologies and evaluation method</summary>
-        <table><thead><tr><th>Typology</th><th>Detected / attempts / matched</th><th>Precision</th><th>Recall</th><th>Jaccard</th></tr></thead>
+        <table><thead><tr><th><Term>Typology</Term></th><th><Term>Detected / attempts / matched</Term></th><th><Term>Precision</Term></th><th><Term>Recall</Term></th><th><Term>Jaccard</Term></th></tr></thead>
           <tbody>{Object.entries(report.byTypology).map(([name, m]) => <tr key={name}><td>{name}</td>
             <td>{m.detectedCases} / {m.groundTruthAttempts} / {m.matched}</td><td>{fraction(m.precision)}</td><td>{fraction(m.recall)}</td>
             <td>{m.meanMatchedJaccard?.toFixed(3) ?? 'Unavailable'}</td></tr>)}</tbody></table>
         <p className="muted">{report.matching}</p><p className="muted">{report.projection}</p>
         <p className="muted">{report.warmupEvents} warmup events; {report.population.testTransactions} test transfers;
           {' '}{report.population.excludedTransactions} excluded campaign transfers; {report.population.excludedAttempts.length} excluded attempts.</p>
-        <details><summary>Excluded attempts ({report.population.excludedAttempts.length})</summary>
-          {report.population.excludedAttempts.map(attempt => <p className="muted" key={attempt.id}>{attempt.id} · {attempt.typology} · {attempt.reason}</p>)}
-        </details>
         {report.limitations.map(item => <p className="muted" key={item}>{item}</p>)}
         <p className="muted">Dataset: {report.dataset}<br />Source SHA-256: {report.sourceSha256}<br />Evaluation input SHA-256: {report.datasetSha256}</p>
       </details></>}

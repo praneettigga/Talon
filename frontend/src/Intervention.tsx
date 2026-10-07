@@ -1,3 +1,4 @@
+import { Term } from './components/Term'
 import { useMemo, useRef, useState } from 'react';
 import type { InvestigationCase, ReplayEvent, ReplayStatus, SimulationResult, SimulationScenario } from './api';
 
@@ -45,9 +46,9 @@ export function Intervention({ investigation, events, replayStatus, onPreview }:
     } catch (failure) { if (identity === requestId.current) setError((failure as Error).message); }
     finally { if (identity === requestId.current) setBusy(false); }
   }
-  return <section className="intervention" aria-label="Intervention comparison"><h3>Compare observed-route disruption</h3>
+  return <section className="intervention" aria-label="Intervention comparison"><h3><Term>Compare observed-route disruption</Term></h3>
     <p className="muted">Observed-route disruption; assumes similar routes recur. This compares the observed graph only and executes no hold.</p>
-    <div className="hold-controls"><label>Single-account hold <select aria-label="Single-account hold" value={validPrimary} disabled={busy}
+    <div className="hold-controls"><label><Term>Single-account hold</Term> <select aria-label="Single-account hold" value={validPrimary} disabled={busy}
       onChange={event => { clear(); setPrimary(event.target.value); setAdditional(candidates.filter(e => e.id !== event.target.value).slice(0, 1).map(e => e.id)); }}>
       {candidates.map(e => <option key={e.id} value={e.id}>{e.id} · {e.roles.join(', ')}</option>)}</select></label>
       <label>Compare routes from <select aria-label="Comparison source" value={source} disabled={busy}
@@ -71,7 +72,7 @@ export function Intervention({ investigation, events, replayStatus, onPreview }:
         <tr><td>Interrupted transfer links</td>{result.scenarios.map(s => <td key={s.name}>{s.interruptedTransferCount}</td>)}</tr>
         <tr><td>Downstream accounts no longer reachable</td>{result.scenarios.map(s => <td key={s.name}>{s.noLongerReachableAccountIds.length}</td>)}</tr>
         <tr><td>Remaining observed alternate route witnesses</td>{result.scenarios.map(s => <td key={s.name}>{s.remainingAlternateRouteCount}</td>)}</tr>
-        <tr><td>Directly touched accounts / counterparties</td>{result.scenarios.map(s => <td key={s.name}>{s.directlyTouchedAccountIds.length} / {s.touchedCounterpartyIds.length}</td>)}</tr>
+        <tr><td><Term>Directly touched accounts</Term> / counterparties</td>{result.scenarios.map(s => <td key={s.name}>{s.directlyTouchedAccountIds.length} / {s.touchedCounterpartyIds.length}</td>)}</tr>
       </tbody></table>
       {result.comparison && <p className="muted">Group hold interrupts {result.comparison.additionalInterruptedTransferIds.length} additional links and makes
         {' '}{result.comparison.additionalUnreachableAccountIds.length} additional downstream accounts unreachable.</p>}
@@ -84,8 +85,8 @@ export function Intervention({ investigation, events, replayStatus, onPreview }:
         <p>No longer reachable: {scenario.noLongerReachableAccountIds.join(', ') || 'None'}</p>
         <p>Directly touched: {scenario.directlyTouchedAccountIds.join(', ')}</p>
         <p>Counterparties touched: {scenario.touchedCounterpartyIds.join(', ') || 'None'}</p>
-        <details><summary>Interrupted transfers ({scenario.interruptedTransferCount})</summary><p>{scenario.interruptedTransferIds.join(', ') || 'None'}</p></details>
-        <details><summary>Remaining route witnesses ({scenario.remainingRouteCount}){scenario.routesTruncated ? ' · first 50 shown' : ''}</summary>
+        <details><summary><Term>Interrupted transfers</Term> ({scenario.interruptedTransferCount})</summary><p>{scenario.interruptedTransferIds.join(', ') || 'None'}</p></details>
+        <details><summary><Term>Remaining route witnesses</Term> ({scenario.remainingRouteCount}){scenario.routesTruncated ? ' · first 50 shown' : ''}</summary>
           {scenario.remainingRoutes.map(route => <p key={route.destination}>{route.accountIds.join(' → ')}
             {route.alternateToInterruptedBaseline ? ' · alternate to interrupted baseline witness' : ''}<br />
             <span className="muted">Transfers: {route.transactionIds.join(', ')}</span></p>)}</details>

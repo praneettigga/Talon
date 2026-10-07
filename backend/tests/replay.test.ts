@@ -16,7 +16,7 @@ test('start is idempotent, pause freezes time, speed takes effect, reset repeats
   context.after(() => replay.dispose());
   const initial = replay.snapshot();
   replay.control({ action: 'start' }); replay.control({ action: 'start' });
-  context.mock.timers.tick(1000);
+  context.mock.timers.tick(34);
   assert.equal(replay.snapshot().cursor, 1);
   replay.control({ action: 'pause' });
   context.mock.timers.tick(10000);

@@ -115,10 +115,10 @@ cd backend && npm run dev
 cd frontend && npm run dev
 ```
 
-Open the Vite URL printed by the frontend (normally http://127.0.0.1:5173). Press **Play**,
-select 1, 5, or 20 events per second, and click a feed entry or graph transfer to
+Open the Vite URL printed by the frontend (normally http://127.0.0.1:5173). Press **Begin**
+to run the curated replay at its fixed 30-events-per-second rate, and click a feed entry or graph transfer to
 inspect its original fields. Pause freezes the stream. Reset clears emitted events and
-returns speed to 1; replaying produces the same event sequence. Event-time gaps are
+returns replay to its fixed 30-events-per-second rate; replaying produces the same event sequence. Event-time gaps are
 compressed for demonstration, while original timestamps remain visible.
 
 The feed shows the latest 50 events. The graph initially shows the latest 40 transfers;
@@ -151,6 +151,21 @@ Per-row source labels and pattern-case ground truth do not enter inference or th
 Aggregated frozen evaluation metrics are displayed separately.
 Named findings are generated from observed graph structure and the manifest's verified
 typology vocabulary.
+
+### Uploading HI-Small or HI-Medium in the demo
+
+The **Import HI dataset** control accepts the three matching AMLWorld source files for one
+dataset size: `HI-<size>_Trans.csv`, `HI-<size>_accounts.csv`, and
+`HI-<size>_Patterns.txt`. The browser streams them to the local API (it does not try to
+load multi-gigabyte CSVs into browser memory). Once preparation completes, the replay bar
+shows the uploaded dataset; press **Begin** to run the normal observed-event, graph, and
+case-detection flow. Preparation scans the transaction source and builds the bounded
+demonstration replay from complete supported pattern attempts plus nearby benign context.
+Uploads select locally trained models by the transaction file's SHA-256 and supported
+typologies. HI-Small and HI-Medium therefore use their respective models. The demo selects
+complete attempts after the matching model's scoring cutoff. A source with no matching
+trained model produces an explicit preparation error; train artifacts for that source first.
+Device context and account age remain unavailable when the source does not supply them.
 
 Express listens on http://127.0.0.1:3001; Vite proxies `/v1` locally:
 

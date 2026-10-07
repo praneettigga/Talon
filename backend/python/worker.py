@@ -19,12 +19,18 @@ def main():
             request = json.loads(line)
             command = request['command']
             if command == 'init':
-                manifest = json.loads(Path(request['manifest']).read_text())
-                if manifest['files']['HI-Small_Trans.csv']['sha256'] != request['sourceSha256']:
-                    raise ValueError('Replay source hash does not match validated manifest')
-                enabled = manifest['enabled_typologies']
-                if any(t not in SUPPORTED or t not in manifest['typology_attempts'] for t in enabled):
-                    raise ValueError('Manifest contains unverified typologies')
+                if request.get('manifest'):
+                    manifest = json.loads(Path(request['manifest']).read_text())
+                    transaction_file = next(name for name in manifest['files'] if name.endswith('_Trans.csv'))
+                    if manifest['files'][transaction_file]['sha256'] != request['sourceSha256']:
+                        raise ValueError('Replay source hash does not match validated manifest')
+                    enabled = manifest['enabled_typologies']
+                    if any(t not in SUPPORTED or t not in manifest['typology_attempts'] for t in enabled):
+                        raise ValueError('Manifest contains unverified typologies')
+                else:
+                    enabled = [name for name in request.get('enabledTypologies', []) if name in SUPPORTED]
+                    if not enabled:
+                        raise ValueError('Uploaded dataset has no supported laundering typologies')
                 try:
                     from .models import ModelRunner
                     models = ModelRunner(request['modelsDirectory'], request['sourceSha256'], enabled)
@@ -34,8 +40,12 @@ def main():
                     model_error = f'Models unavailable: {error}'
                 try:
                     from .enrichment import Enrichment
-                    enrichment = Enrichment(request['enrichmentPath'], request.get('replaySha256'), request['sourceSha256'])
-                    enrichment_error = None
+                    if request.get('manifest'):
+                        enrichment = Enrichment(request['enrichmentPath'], request.get('replaySha256'), request['sourceSha256'])
+                        enrichment_error = None
+                    else:
+                        enrichment = None
+                        enrichment_error = 'Synthetic context unavailable for uploaded datasets.'
                 except Exception as error:
                     enrichment = None
                     enrichment_error = f'Synthetic context unavailable: {error}'

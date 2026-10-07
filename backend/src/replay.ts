@@ -16,7 +16,9 @@ export async function loadReplayInput(path: string) {
 
 export class Replay {
   private cursor = 0;
-  private speed = 1;
+  // 183 curated events at 30/sec leave headroom to complete the full replay
+  // within the ten-second interaction budget, including worker processing.
+  private speed = 30;
   private status: Snapshot['status'];
   private timer: ReturnType<typeof setInterval> | undefined;
   private listeners = new Set<(snapshot: Snapshot) => void>();
@@ -99,7 +101,7 @@ export class Replay {
         break;
       case 'reset':
         this.generation += 1;
-        this.stopTimer(); this.cursor = 0; this.speed = 1; this.status = 'paused';
+        this.stopTimer(); this.cursor = 0; this.speed = 30; this.status = 'paused';
         if (this.worker) { this.resetting = true; return this.resetIntelligence(); }
         break;
       case 'speed':
@@ -141,4 +143,21 @@ export class Replay {
     return result;
   }
   dispose() { this.generation += 1; this.stopTimer(); this.worker?.close(); this.listeners.clear(); }
+  async replace(artifact: Artifact, worker: IntelligenceWorker, initial: IntelligenceSnapshot) {
+    this.generation += 1;
+    this.stopTimer();
+    this.worker?.close();
+    this.artifact = artifact;
+    this.error = null;
+    this.worker = worker;
+    this.intelligence = initial;
+    this.cursor = 0;
+    this.speed = 30;
+    this.status = 'paused';
+    this.busy = false;
+    this.resetting = false;
+    this.pausing = false;
+    this.publish();
+    return this.snapshot();
+  }
 }

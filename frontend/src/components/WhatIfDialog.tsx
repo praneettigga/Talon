@@ -1,3 +1,4 @@
+import { Term } from './Term'
 import { useMemo, useState } from 'react'
 import { ArrowDownRight, Check, GitCompareArrows, X } from 'lucide-react'
 import type { ReplayStatus, SimulationResult, SimulationScenario } from '../api'
@@ -16,11 +17,11 @@ type Props = {
 
 function ScenarioSummary({ scenario }: { scenario: SimulationScenario }) {
   return <div className="simulation-links">
-    <div>Interrupted transfers <b>{scenario.interruptedTransferCount}</b></div>
-    <div>Accounts no longer reachable <b>{scenario.noLongerReachableAccountIds.length}</b></div>
-    <div>Remaining route witnesses <b>{scenario.remainingRouteCount}{scenario.routesTruncated ? '+' : ''}</b></div>
-    <div>Directly touched accounts <b>{scenario.directlyTouchedAccountIds.length}</b></div>
-    <details><summary>Observed route details</summary>
+    <div><Term>Interrupted transfers</Term> <b>{scenario.interruptedTransferCount}</b></div>
+    <div><Term>Accounts no longer reachable</Term> <b>{scenario.noLongerReachableAccountIds.length}</b></div>
+    <div><Term>Remaining route witnesses</Term> <b>{scenario.remainingRouteCount}{scenario.routesTruncated ? '+' : ''}</b></div>
+    <div><Term>Directly touched accounts</Term> <b>{scenario.directlyTouchedAccountIds.length}</b></div>
+    <details><summary><Term>Observed route details</Term></summary>
       <p>Held: {scenario.heldAccountIds.join(', ') || 'None'}</p>
       <p>Interrupted: {scenario.interruptedTransferIds.join(', ') || 'None'}</p>
       <p>No longer reachable: {scenario.noLongerReachableAccountIds.join(', ') || 'None'}</p>
@@ -93,10 +94,10 @@ export default function WhatIfDialog({ caseRecord, accounts, transactions, curso
           </label>)}
         </div>
         <div className="hold-controls">
-          <label>Single-account hold <select aria-label="Single-account hold" value={validPrimary} disabled={busy} onChange={event => { setPrimary(event.target.value); setAdditional(candidates.filter(item => item.account_id !== event.target.value).slice(0, 1).map(item => item.account_id)); clearResult() }}>
+          <label><Term>Single-account hold</Term> <select aria-label="Single-account hold" value={validPrimary} disabled={busy} onChange={event => { setPrimary(event.target.value); setAdditional(candidates.filter(item => item.account_id !== event.target.value).slice(0, 1).map(item => item.account_id)); clearResult() }}>
             {candidates.map(account => <option key={account.account_id} value={account.account_id}>{account.account_id} · {account.role}</option>)}
           </select></label>
-          <label>Comparison source <select aria-label="Comparison source" value={source} disabled={busy} onChange={event => { setSource(event.target.value); clearResult() }}>
+          <label><Term>Comparison source</Term> <select aria-label="Comparison source" value={source} disabled={busy} onChange={event => { setSource(event.target.value); clearResult() }}>
             <option value="">Automatic observed sources</option>{candidates.map(account => <option key={account.account_id} value={account.account_id}>{account.account_id}</option>)}
           </select></label>
         </div>
